@@ -9,7 +9,6 @@
 # byte-sorted, <side> TAB <type> TAB <name>, with a fourth field for a
 # symlink's target.
 lower	directory	.claude
-lower	directory	.git
 lower	directory	.notes
 lower	file	.gitignore
 lower	file	CLAUDE.md

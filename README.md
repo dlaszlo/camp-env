@@ -34,15 +34,14 @@ attachment rule this whole arrangement follows: the environment may know
 its product, the product may not know its environment. Every pointer here
 runs outward, and nothing points back.
 
-**`camp-workspace/` and `camp-notes/` are not in this repository yet.**
-The first carries what a session needs and the product must not contain —
+**`camp-workspace/` and `camp-notes/` are part of this repository.** The
+first carries what a session needs and the product must not contain —
 `CLAUDE.md`, the agent definitions, the skills, the output style. The
 second is the design record: the specification, the measured constraints,
-and the log of what the build found. Both exist here as separate
-repositories on the author's machine, and how they should be published —
-folded into this repository, or kept beside it — has not been settled.
-Until it is, a clone of this repository is **not** a working composition:
-`camp plan` will tell you both are missing.
+and the log of what the build found. Both were separate repositories
+until they were folded in here with their history; a clone brings the
+whole environment down, which is the point of there being one repository
+and not four.
 
 **`camp-live/` is where the work happens.** It is not in git and never
 will be: it is not a directory of files but the composition itself, built
@@ -53,13 +52,8 @@ would make camp refuse. Create it once, after cloning.
 
 ## Making it work from a clone
 
-Until the two repositories above are settled, this is what a clone needs:
-
 ```
-mkdir camp-live
-git init camp-workspace          # your own: CLAUDE.md, .claude/, and a
-                                 # committed empty .notes/ mount point
-git init camp-notes              # anything you want writable at .notes
+mkdir camp-live                  # git cannot record an empty directory
 $EDITOR .camp/config.yml         # set env: to this directory's real path
 camp accept
 camp plan                        # read it before the first run
@@ -81,9 +75,14 @@ that mount on its own; if it is missing, the overlap gate refuses the
 composition before anything is mounted — by a rule that knows nothing
 about git.
 
-**`.notes` is a writable mount from its own repository**, because the
-design record has to be editable from inside a session while the workspace
-is read-only in there on purpose.
+**`.notes` is a writable mount**, because the design record has to be
+editable from inside a session while the workspace is read-only in there
+on purpose. One thing follows from it living in this repository rather
+than its own: `git` run in `.notes` from inside a session walks up to the
+composed root and finds the **code** repository, so the design record is
+committed from outside the composition. The generated exclude still
+covers `/.notes`, so nothing lands in a commit by accident; what changed
+is that the boundary is now detection rather than impossibility.
 
 **`.claude` is an islands mount**: the entries the workspace tracks stand
 read-only, and everything only this machine owns — `settings.local.json`,
