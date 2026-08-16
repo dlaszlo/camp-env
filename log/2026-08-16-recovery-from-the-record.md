@@ -72,6 +72,65 @@ cannot tell camp's mount from a stranger's that took the same name), and
 a teardown whose last step fails no longer reports success (that is
 finding 013).
 
+## The kill-point matrix, and the two defects it found
+
+Spec §12's acceptance ran: a kill at every boundary, after which `status`
+and `down` have to converge from the record alone, with the configuration
+deleted. All five converged. Two things are worth writing down about how.
+
+**The boundaries are not where the specification's sentence suggests.**
+The list says "after the record is written, during the helper's mounts,
+after the move", and the front end has no window after the move: the move
+happens inside the helper call, so from the front end's side the mounts
+and the move are one step. What the front end really has is four:
+
+| killed at | what the machine had | what the record said |
+|---|---|---|
+| after the record is written | nothing mounted | `mounting`, no identities |
+| during the helper's work | the helper finished alone: 10 mounts, workspace frozen | `mounting`, no identities |
+| the moment the move is visible | the same -- the kill is still inside the helper call | `mounting`, no identities |
+| after the identities are recorded | 10 mounts | `mounting`, with identities |
+| the unmount boundary | nothing mounted | `up` |
+
+The helper outliving its caller is the interesting one. It is a root
+process on the other side of sudo, so killing `camp up` does not stop it:
+it completes every mount and the move, and the record never learns the
+identities, because the front end that would have written them is gone.
+`down` handles that -- a mount with no recorded identity is unmounted
+without a comparison, which is why that rule exists.
+
+Timing could not produce the last row: a whole teardown takes about 30 ms
+and an external observer cannot sample inside it. That state was made
+instead by calling `camp helper-unmount` directly with the job `down`
+would have sent, which leaves the record untouched -- the same machine
+state by a different route, and said here rather than implied.
+
+**The matrix found two defects, both introduced by this session's own
+repairs.**
+
+The identity check refused two different situations with one rule.
+"camp's mount is gone and somebody else's is there" has to be refused;
+"camp's mount is gone and nothing is there" is a job already done. After
+a teardown that unmounted everything and died before saying so, every
+recorded path resolves to whatever was underneath it -- for the live
+directory, the empty directory the composition stood on -- so `camp down`
+called eleven mounts that were already gone a stranger's and refused to
+finish. Whether anything is mounted there is the first question, and only
+the mount table answers it.
+
+And `status` said more than it knew: mounts with no recorded identity
+were counted as "the object camp mounted". It now separates present from
+verified, and names the disagreement between the record's phase and the
+machine.
+
+One more, found by the test suite rather than by the matrix, and worth
+the same attention: with `-f` given and no record for it, record
+selection fell through to whatever the current directory belongs to. A
+test naming a configuration in a scratch directory therefore reached the
+record of this machine's own environment and got as far as calling sudo
+on it. A named configuration now names one composition and no other, and
+the cli test package keeps its own state directory.
+
 ## The five readings
 
 **1. `explain`'s source.** §16 says explain is generated from the live

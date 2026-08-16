@@ -159,13 +159,18 @@ prompt.** One `camp up` produces exactly one sudo invocation,
 observable while the testing sudoers rule described in that log file is
 in place, and counting invocations is the stronger measurement anyway.
 
-**6, the kill-point matrix — the first half ran, and failed.** With the
-composition up and the configuration moved aside, `camp status` and
-`camp down` both refused for want of a configuration; the record held the
-whole plan and neither would read it. Repaired, and measured again on a
-real composition: `camp down` with no configuration removed 11 of 11
-mounts and said which part it could not do. The `kill -9` half is unrun,
-and it is what this item is really about.
+**6, the kill-point matrix — ran, and passed at every boundary.** It
+began by failing: with the composition up and the configuration moved
+aside, `camp status` and `camp down` both refused for want of a
+configuration, while the record held the whole plan. After that repair,
+a `kill -9` of `camp up` was fired at each boundary by watching the
+machine for it rather than by waiting a length of time -- an `up` takes
+50 ms, so nothing else would hit. All five states converged: `status`
+described each one from the record alone, and `down` took each apart with
+no configuration present. The matrix found two defects in the repairs
+themselves; both are written up in
+`log/2026-08-16-recovery-from-the-record.md`, along with what the
+boundaries turn out to be, which is not quite what §12's sentence says.
 
 **4, 5 and 7 are unrun.** 4 needs a person, because it is a `sudo camp
 up` and the testing rule deliberately does not cover it. 5 has no
