@@ -165,6 +165,41 @@ repair lands. The absence of any privileged lifecycle test is what let
 all four through, and the terminal-gated group in
 `reference/remaining-checks.md` has never run.
 
+### What the first four turned out to be, once repaired
+
+All four are in, the gate is clean on the host and through the installed
+binary with nothing skipped, and two of them are now measured rather than
+argued.
+
+The descriptor repair carries its own proof. The test mounts through the
+helper's own entry point, checks the bind is read-only and private, and
+then makes the identical propagation call through the descriptor opened
+before the bind and requires it to *fail*. If that ever starts succeeding,
+the reopen was not what made the difference and the test says so.
+
+The locked flags came out better than the finding asked. They are read
+with `fstatfs` on the descriptor camp already holds, rather than looked up
+in mountinfo by a path that is not a mount point — which is what made the
+old code replicate `/proc`'s flags. Measured first: statfs and mountinfo
+agree on exactly this flag set, on ext4, tmpfs and procfs.
+
+The helper's confinement rests on three things it stops trusting rather
+than on a list of paths it dislikes. The ids come from sudo. Every operand
+must lie beneath one base the invoking user owns — true of every
+environment root, false of `/` and `/etc`. And the single directory it
+clears must carry camp's own marker, which is written when camp creates
+its work and storage areas and which nothing else on the machine has a
+reason to have. The hostile jobs are tests now, and they run as an
+ordinary user on purpose: every one has to be refused before any syscall
+that would need privilege, so if a check ever moves after the act they
+begin failing on the check rather than on the permission.
+
+What is still true, and belongs in the next session's hands: the
+privileged mode has never been run end to end. Three of these four were
+invisible precisely because nothing ever ran it, and the terminal-gated
+group in `reference/remaining-checks.md` is still the only thing that
+would.
+
 After those, in the order the verification put them: the lexical rather
 than descriptor-confined `fsx` boundary (003); the unpinned overlay and
 move operands (004); the record that cannot drive verification, status or
