@@ -1,6 +1,20 @@
 # The checks that need an install, and the ones that need a terminal
 
-Everything in this file is written, runs, and is waiting. None of it can
+**The namespace group is no longer waiting.** On 2026-08-16 camp was
+installed at `/usr/local/bin/camp` with its profile, and the whole suite
+was run through it — `camp run -- go test ./internal/... -count=1`, which
+opens the namespace with the installed binary and lets the test binary
+create its own inside. Every package passed and **nothing skipped**. What
+is still waiting is the terminal group and the two person-gated
+measurements at the end.
+
+That first real run earned its keep immediately: two source guards had
+been walking the module's directory tree, which inside a composition also
+carries the notes repository at `.notes`, whose design documents quote the
+very strings the guards forbid. They passed on the host and failed in the
+composition. They now ask git what this repository tracks.
+
+Everything else in this file is written, runs, and is waiting. It cannot
 run from a checkout on this machine, for two reasons that have nothing to
 do with the code.
 
@@ -29,16 +43,22 @@ sudo apparmor_parser -r /etc/apparmor.d/camp
 camp doctor          # the namespace line should read "permitted, and a mount inside one succeeds"
 ```
 
-Then `go test ./...` runs everything below except the sudo group.
+Then, to run the namespace group, let the installed binary open the
+namespace and run the tests inside it:
+
+```
+cd ~/dev/camp-env && camp run -- go test ./internal/... -count=1
+```
+
+`go test` run directly from the checkout still skips these: the profile
+grants the permission to one binary path, and the test binary is not it.
+A skip is not a pass.
 
 ## Install-gated: the namespace
 
-These skip with an explanatory message today and pass once the binary and
-its profile are installed. Every one of them has already been **run and
-passed** through the installed `/usr/local/bin/ply` used purely as a
-vehicle for opening a namespace, which the specification's testing note
-allows; what the install changes is the number of nesting levels, not the
-mechanism.
+**Run and passed through the installed binary on 2026-08-16**, in the
+composition camp's own environment builds. They skip with an explanatory
+message when run from a checkout.
 
 | check | where |
 |---|---|
