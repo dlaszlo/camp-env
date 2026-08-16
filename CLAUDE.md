@@ -5,16 +5,22 @@ OverlayFS and bind mounts, without any of them learning about the others.
 Writes land in the code repository or in machine-local storage — never in
 the workspace, and never silently in the wrong place.
 
-You are working inside a composition camp built. What that means for you:
+You are working inside a composition camp built. **Read
+[ENVIRONMENT.md](ENVIRONMENT.md) before your first write** — it says what
+a composed tree is, which parts of it refuse writes and why, and what to
+do when one does. `camp explain` answers the same questions for the
+composition that is actually running.
+
+What it means here:
 
 | where | what it is |
 |---|---|
 | everything not listed below | the **code repository** — the product. Every ordinary write lands here. |
-| `.notes/` | the **design record**, its own repository, writable. The specification lives at `.notes/design/spec.md`. |
+| `.notes/` | the **design record**, its own repository, writable. The specification lives at `.notes/reference/spec.md`. |
 | `.claude/` | machine-local storage with the workspace's tracked entries standing read-only in it |
 | `CLAUDE.md`, and the other workspace names | read-only. Editing them here fails with `EROFS`, by design. |
 
-**Read `.notes/design/spec.md` before changing behaviour.** It is the
+**Read `.notes/reference/spec.md` before changing behaviour.** It is the
 single source the implementation was built from, and it records why each
 decision is what it is. `constraints.md` beside it records what the
 kernel, git and the measuring instruments actually do — an argument that
