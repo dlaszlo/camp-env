@@ -3,17 +3,18 @@
 **Status: the single source for implementation.** This document
 consolidates every decision made through 2026-08-15 evening: the
 redesign conversation, the review sessions, the measurements, and the
-final design conversation. Where it disagrees with `model.md`,
-`redesign-2026-08-15.md` or `README.md`, **this document wins** — those
-describe earlier states of the design. `constraints.md` remains valid
+final design conversation. It superseded two earlier design documents
+and two reviews, all of which have since been deleted: they were working
+papers, their findings are written in here, and keeping them would only
+have invited somebody to read the wrong one. `constraints.md` remains valid
 except where §4 below corrects it. A fresh session should be able to
 build the whole system from this file alone, without asking — that is
 the standard this document is written to; §23 registers what is
 deferred and which load-bearing behaviours are still unmeasured, each
 with the check that settles it.
 
-**The 2026-08-16 rounds.** `docs/review-of-spec.md` raised 17
-findings against this file. The owner settled five questions in the
+**The 2026-08-16 rounds.** A review of this file raised 17
+findings against it. The owner settled five questions in the
 design conversation of 2026-08-15 night — the lock model (§13), the
 deletion of `--allow-detach` (§14, §16), one ordered `steps:`
 sequence in place of the three mount keys (§6, §7), `.git` as an
@@ -1739,9 +1740,7 @@ sites across 7 files at the time of the rename), not a harness.
    status, `tmux new-session -d` returning while the init holds the
    locks, Ctrl-C reaching the workload and not the init (§14).
 7. **Docs**: README and `explain` text to the new design; tmux pattern
-   documented. (The historical docs — `model.md`,
-   `redesign-2026-08-15.md`, the reviews — are records and are not
-   rewritten; this spec supersedes them.)
+   documented.
 
 Testing note: until the stage-4 locked-flags fix lands, scratch
 compositions run under `~/overlayfs` or any ext4 path — the installed
@@ -1791,8 +1790,7 @@ closed WRONG-1, WRONG-2, UNDERSPECIFIED-1 and part of GAP-3; the
 review's own fix paragraphs, with three further owner decisions — the
 front-end-plus-helper elevation model (§14), C-style escaped record
 formats (§18), and the persisted namespace session report (§14, §16).
-Nothing from `docs/review-of-spec.md` remains unanswered in this
-file.
+Nothing from that review remains unanswered in this file.
 
 **Named build-blocking measurements** — the register the review asked
 §23 to be. Each carries its expected outcome; an item leaves this
@@ -1822,13 +1820,9 @@ and each already appears in §22's stages:
 
 ## 24. References (background, not required reading)
 
-- `docs/constraints.md` — the original constraint set (C1–C33).
-- `docs/review-2026-08-15.md` — the second-pass review: the
-  measurements behind §4's corrections and §15's design.
-- `docs/review-of-spec.md` — the review of *this* file (17 findings);
-  all seventeen are closed by the two 2026-08-16 rounds (§23).
-- `docs/redesign-2026-08-15.md`, `docs/model.md` — historical;
-  superseded where they differ.
+- `constraints.md` — the constraint set (C1–C34), beside this file.
+- `log/2026-08-16-build-measurements.md` — what the build itself
+  measured, including the two places where it corrected this document.
 - `~/overlayfs/prompts/00-decisions-2026-08-15.md` — the decision log
   (Part A/B settled record; the mode entry B13 is closed by §14).
 - `~/overlayfs/diet-coach-poc/project/runtime/evidence/` — the POC

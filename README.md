@@ -1,32 +1,80 @@
-# camp — the design record
+# camp — design and measurements
 
-This repository is **not** part of the tool. It is the record of how the
-tool was designed and what was measured while building it: the working
-material that would otherwise have to live in the product's history, or
-nowhere.
+This repository is **not** part of the tool. It is where camp's design
+lives, and the record of what was measured while building it — the
+working material that would otherwise have to sit in the product's
+history, or nowhere.
 
 It is mounted read-write into the composed tree at `.notes`, so it can be
 read and edited from inside a session. The workspace repository is
-read-only in there on purpose; this one is not, because the design record
-is written *while* the work happens.
+read-only in there on purpose; this one is not, because the design is
+written *while* the work happens.
+
+## The two kinds of thing in here
 
 ```
-design/
-├── spec.md                    the single source the implementation was built from
-├── constraints.md             what the kernel, git and the instruments actually do (C1–C34)
-├── measurements-2026-08-16.md what the build itself measured, with how
-├── install-gated-checks.md    the checks that need an install, sudo, or a person
-├── review-2026-08-15.md       the second-pass review, with its mount measurements
-├── review-of-spec.md          the review of the specification (17 findings)
-├── model.md                   an earlier state of the design — historical
-├── redesign-2026-08-15.md     the redesign that superseded half of it — historical
-└── realpair_test.go.txt       an acceptance check against a real repository pair
+reference/     what is true now — look it up, no dates
+├── spec.md               the design the implementation was built from
+├── constraints.md        what the kernel, git and the instruments do (C1–C34)
+└── remaining-checks.md   what still needs an install, sudo, or a person
+
+log/           what happened, in order — dated, never edited afterwards
+└── 2026-08-16-build-measurements.md
 ```
 
-`spec.md` wins where it disagrees with `model.md` or
-`redesign-2026-08-15.md`; those describe earlier states and are kept as
-records rather than rewritten. `constraints.md` records what was *found*
-and cannot be argued with; the rest records what was *decided* and can.
+The split is the ordering rule, and it is worth keeping. A reference
+document answers "what is true"; a date in its name would say *stale* the
+moment it is not. A log entry answers "what did we know when", and the
+date belongs in the name. What neither can carry is which document
+followed from which — a filename encodes one dimension and that is a
+graph, so it lives here in this index instead.
 
-Keep it private. It names real paths, real repositories and real
-decisions, and none of that is anybody else's business.
+## What each is
+
+**`reference/spec.md`** — the single source the implementation was built
+from. Where it and the code disagree, **the code is the truth**: the code
+was measured, the document was written. It superseded two earlier design
+documents and answered two reviews; all four were working papers, their
+findings are written into it, and they have been deleted rather than left
+for somebody to read the wrong one.
+
+**`reference/constraints.md`** — what was *found* rather than decided:
+what OverlayFS does and refuses to do, what a bind mount requires, what a
+user namespace costs, what git cannot represent, and which instruments
+answer a different question than the one asked. An argument that
+contradicts something in here is wrong rather than merely different.
+
+**`reference/remaining-checks.md`** — the checks that cannot run
+unattended: the ones needing sudo on a real terminal, and the handful
+needing a person at a keyboard.
+
+**`log/2026-08-16-build-measurements.md`** — what the build itself
+measured, including the two places where it corrected the design.
+
+## Where this stands
+
+The tool is built and working. Ten commits, a fresh history with nothing
+internal in it, tests green, and camp composes its own development
+environment — which is what this repository is part of.
+
+**The design document has not been brought up to date with what was
+built.** It still reads as a plan: build-order stages that are finished,
+deferred items that are done, decisions recorded with the date they were
+taken, and a section about migrating one specific pair of repositories
+that has nothing to do with camp. None of that is wrong exactly, but all
+of it would mislead somebody — a person or a model — reading it as a
+description of the tool that exists.
+
+That is the next job, and it is the one that matters most for this
+repository: **design and proven measurements, nothing else.** Specifically:
+
+- rewrite `spec.md` as a description of what camp *is*, in the present
+  tense, with the reasoning kept and the process removed — no build
+  order, no dated decisions, no migration of anything;
+- fold the corrections the build measured into it, so it stops disagreeing
+  with the code (the capability set an overlay mount needs, the locked
+  flags, the shape of the namespace restriction);
+- keep every "why", because that is the half a reader cannot recover from
+  the code;
+- check `constraints.md` the same way — it is mostly measurement and
+  should survive nearly intact.
