@@ -19,7 +19,9 @@ reference/     what is true now — look it up, no dates
 └── remaining-checks.md   what still needs an install, sudo, or a person
 
 log/           what happened, in order — dated, never edited afterwards
-└── 2026-08-16-build-measurements.md
+├── 2026-08-16-build-measurements.md
+├── 2026-08-16-handoff-ssh-inside-a-session.md
+└── 2026-08-16-session-handoff-state-of-the-work.md
 ```
 
 The split is the ordering rule, and it is worth keeping. A reference
@@ -50,6 +52,16 @@ needing a person at a keyboard.
 
 **`log/2026-08-16-build-measurements.md`** — what the build itself
 measured, including the two places where it corrected the design.
+
+**`log/2026-08-16-handoff-ssh-inside-a-session.md`** — a design brief,
+written to be handed to a session that was not there. ssh does not work
+inside a composition, for a reason no mapping can fix; the file carries
+the measurements, every candidate solution with its cost, the class of
+problems this one belongs to, and what is still undecided.
+
+**`log/2026-08-16-session-handoff-state-of-the-work.md`** — where the work
+stands: what is done, what is open, and the facts about this environment a
+new session would otherwise rediscover.
 
 ## Where this stands
 
