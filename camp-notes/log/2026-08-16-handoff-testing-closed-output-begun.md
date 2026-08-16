@@ -94,3 +94,28 @@ chosen). Whether the inventory should count a name the repository itself
 gitignores — a build artefact at the code root triggered a drift warning
 this session. And the five readings listed in
 `2026-08-16-recovery-from-the-record.md`.
+
+## Added after the fold
+
+**The environment is one repository now.** `camp-workspace` and
+`camp-notes` were folded into `camp-env` with their history, by
+`git subtree`; `camp` is the only submodule, because it is the product
+and is published on its own. A clone now brings the whole environment
+down. Two things follow, and both are in that repository's README: the
+workspace stopped being a repository of its own, so its root lost `.git`
+and the inventory was re-accepted; and `git` run in `.notes` from inside
+a session walks up to the composed root and finds the **code**
+repository, so the design record is committed from outside the
+composition.
+
+**camp creates the composed tree's directory.** git records no empty
+directory and a placeholder in this one would make camp refuse, so a
+clone could never bring it and every fresh checkout met a refusal for the
+one directory camp can safely make itself. A session creates it now;
+`camp plan` still creates nothing and says it is not there yet. A parent
+that does not exist is still refused -- that is a typo in `merged:` --
+and so is a `merged:` pointing inside a repository, checked at the
+creation site because it runs before the validation.
+
+The specification says nothing either way about who creates that
+directory. It may want a sentence, and that is the owner's file.

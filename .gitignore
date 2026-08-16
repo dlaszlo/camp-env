@@ -1,7 +1,7 @@
 # The composed tree. Not a directory of files but the composition itself:
-# built at every session, empty between them. It must exist and be empty
-# before camp will start, so it is created by hand after cloning and never
-# committed -- a placeholder file in it would make camp refuse.
+# built at every session, empty between them. Never committed -- git
+# records no empty directory, and a placeholder file in this one would
+# make camp refuse the composition. A session creates it.
 /camp-live/
 
 # Machine-local, and neither of them is a decision anyone can review.

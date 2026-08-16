@@ -45,19 +45,17 @@ and not four.
 
 **`camp-live/` is where the work happens.** It is not in git and never
 will be: it is not a directory of files but the composition itself, built
-at every `camp run` and gone when the session ends. It has to exist and be
-**empty** before a session starts, which is why the clone does not bring
-it — git cannot record an empty directory, and a placeholder file in it
-would make camp refuse. Create it once, after cloning.
+at every `camp run` and gone when the session ends. A clone cannot bring
+it — git records no empty directory, and a placeholder file in it would
+make camp refuse — so camp creates it itself when a session starts.
 
 ## Making it work from a clone
 
 ```
-mkdir camp-live                  # git cannot record an empty directory
 $EDITOR .camp/config.yml         # set env: to this directory's real path
 camp accept
 camp plan                        # read it before the first run
-camp run -- bash
+camp run -- bash                 # creates camp-live/ and composes into it
 ```
 
 `camp plan` names anything that would stop it, in sentences, with the way
