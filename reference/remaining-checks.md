@@ -100,8 +100,6 @@ shared parent that `MS_MOVE` refuses and the shared destination that marks
 the moved mounts shared. All six are repaired, and a seventh, a failed
 `up` leaving root-owned residue nothing could clear, with them.
 
-Everything below is still unrun. It is the next session's first job.
-
 Run, in an environment whose `camp plan` is clean:
 
 ```
@@ -136,6 +134,45 @@ and check, from a **second terminal**:
    descriptor-relative resolution must refuse it with "is not the object
    camp checked". Constructing this by hand needs a slow filesystem or a
    debugger breakpoint; the code path is `privileged.checkIdentity`.
+
+### What has run, and what it found
+
+On 2026-08-16, in the session after the first one. Running them found
+two defects, both recorded in
+`log/2026-08-16-recovery-from-the-record.md`: `camp up` failed its own
+post-move check on every composition, and a failed `up` reported a clean
+machine while the composition stood.
+
+**1, staging invisibility — passed.** A sampler in a second terminal,
+printing only when the listing changed, saw `entries=0` and then one jump
+to the whole tree at the moment of the move. No intermediate value and no
+error: the half-built staging tree is never visible at the live path.
+
+**2, the machine-wide freeze — passed.** From a process outside the
+composition, `touch` and `mkdir` in the workspace both fail `EROFS` while
+it is up, and both succeed again after `camp down`.
+
+**3, sudo exactly once — passed, from the log rather than from the
+prompt.** One `camp up` produces exactly one sudo invocation,
+`COMMAND=/usr/local/bin/camp helper-mount`, and nothing else.
+`journalctl _COMM=sudo` is where that is read. The prompt itself is not
+observable while the testing sudoers rule described in that log file is
+in place, and counting invocations is the stronger measurement anyway.
+
+**6, the kill-point matrix — the first half ran, and failed.** With the
+composition up and the configuration moved aside, `camp status` and
+`camp down` both refused for want of a configuration; the record held the
+whole plan and neither would read it. Repaired, and measured again on a
+real composition: `camp down` with no configuration removed 11 of 11
+mounts and said which part it could not do. The `kill -9` half is unrun,
+and it is what this item is really about.
+
+**4, 5 and 7 are unrun.** 4 needs a person, because it is a `sudo camp
+up` and the testing rule deliberately does not cover it. 5 has no
+copy-up candidate in this environment: every workspace root entry is
+either bind-mounted or shadowed by the code repository, so measuring it
+means putting a file in the workspace repository for the purpose, or
+doing it in a throwaway machine.
 
 ## Person-gated: the session environment against the real world
 
