@@ -18,8 +18,10 @@ the user — and not a limitation to work around.
 
 ## Unlock the first one
 
+From a terminal outside any session:
+
 ```
-cd ~/overlayfs/ply
+cd ~/dev/camp-env/camp
 go build -o camp ./cmd/camp
 sudo install -m 755 camp /usr/local/bin/camp
 sudo install -m 644 packaging/apparmor/camp /etc/apparmor.d/camp
@@ -53,6 +55,18 @@ mechanism.
 | the tree exists inside and the live directory is empty outside | `internal/session` — `TestTheCompositionIsBuiltInsideAndInvisibleOutside` |
 | a daemonised workload returns at once while the init holds the locks | `internal/session` — `TestADaemonisedWorkloadReturnsWhileTheInitHoldsTheLocks` |
 | the locks survive a daemonised tmux server (spec §22 stage 2) | covered by the row above, with `setsid` standing in for tmux; run the tmux form by hand once, below |
+| a declared variable reaches a direct workload, a shell and a daemonised descendant; `/proc/1/environ` proves it absent from camp-as-init; `/proc/self/status` proves the workload holds no capability | `internal/session` — `TestADeclaredValueReachesTheWorkloadAndNotTheInit` |
+| a workspace executable reachable only through the declared `PATH` is what a bare command name selects | `internal/session` — `TestABareCommandIsFoundThroughTheDeclaredPathInASession` |
+| nothing declared survives the session: the calling process's variables are unchanged and the live directory is empty outside | `internal/session` — `TestNothingDeclaredLeaksOutOfTheSession` |
+
+The three rows above are the session environment's own group (spec §6,
+§14). Everything else about that feature runs unattended: the grammar and
+resolution tables in `internal/envx`, the section's parsing and refusals in
+`internal/config`, the rendering and redaction rules in `internal/report`,
+the workload construction and the `CAMP_SESSION` source guard in
+`internal/session`, and the OpenSSH arrangement — launchers, `-F` on every
+entry point, a git fetch through the declared command — in
+`internal/session/openssh_test.go` against fake programs.
 
 ## Terminal-gated: the privileged mode
 
@@ -97,6 +111,40 @@ and check, from a **second terminal**:
    descriptor-relative resolution must refuse it with "is not the object
    camp checked". Constructing this by hand needs a slow filesystem or a
    debugger breakpoint; the code path is `privileged.checkIdentity`.
+
+## Person-gated: the session environment against the real world
+
+These need the installed binary for the namespace and a person for
+credentials and host-key decisions. They need no sudo. Both are named in
+spec §23 as open measurements of this feature.
+
+- **The in-composition OpenSSH run.** In an environment whose `session:`
+  section declares `GIT_SSH_COMMAND` and the launcher directory, and whose
+  workspace carries the three launchers (docs/install.md, "ssh inside a
+  session"), start `camp run -- <shell>` and run against a real peer:
+
+  ```
+  ssh <a host from your ~/.ssh/config> hostname
+  scp <a small file> <host>:/tmp/
+  sftp -b /dev/null <host>
+  git ls-remote <an ssh remote>
+  ```
+
+  What is being measured: no "Bad owner or permissions" refusal, the
+  user's own configuration still applying (host aliases, keys, ports), and
+  each of the three entry points reaching the real program through its
+  launcher. Then, in the **same terminal after the session ends**, run
+  `which ssh` and one `ssh` — command resolution and behaviour outside
+  must be exactly what they were before. Nothing camp did may have touched
+  the host.
+
+- **The keyring over the namespace boundary.** Whether `libsecret` /
+  `gnome-keyring` is reachable from inside a session — the socket lives in
+  the user's own runtime directory, so it probably is, but nobody has run
+  it. A `git push` to an https remote whose credentials come from the
+  keyring is the shortest test. This one matters because a push that
+  cannot reach the keyring is the same user-visible failure as the ssh
+  refusal that started this work, and no configuration key fixes it.
 
 ## Manual, once
 
