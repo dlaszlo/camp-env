@@ -69,14 +69,28 @@ repository with the three launchers, and a `camp accept` after it appears.
 Decided with the owner in this session, not yet built. This is the next
 piece of work.
 
-**Every line says what happened and the one fact needed with it, in one
-line.** The progress lines used to explain themselves — why a lock is
-taken, what a capability drop is for — and that is what made a failed run
-unreadable. The long form belongs in `camp explain` and in the documents.
-Refusals stay full, because they are repair instructions (§21), but one
-problem is stated once: nine mounts failing the same check must be one
-refusal naming nine paths, not nine refusals. **That grouping is not
-built yet** and is the largest remaining piece of this.
+**An `[OK]` line states a fact and stops.** No reason, no justification —
+`locks: camp, camp-live` and nothing else. Explanation is what a reader
+needs when something is wrong, so it belongs to `[ERROR]`, `[WARN]` and
+`[FAILED]`; a step that went as planned needs none. The long form belongs
+in `camp explain` and in the documents. Refusals stay full, because they
+are repair instructions (§21), but one problem is stated once: nine mounts
+failing the same check must be one refusal naming nine paths, not nine
+refusals. **That grouping is not built yet** and is the largest remaining
+piece of this.
+
+That rule collides with one thing on purpose, and the collision needs
+settling rather than silently resolving. Amendment A1 of the build plan
+deliberately hung the ownership fact — only your uid is mapped, so other
+owners show as `nobody` — on the identity line, as the breadcrumb a
+captured log needs when an artefact's ownership surprises somebody later.
+Under this rule that clause has no business on an `[OK]` line. The
+resolution that keeps both: give it its own `[NOTE]`. It is not the
+outcome of a step, it is something worth knowing about the run, which is
+what a note is for.
+
+A `[WARN]` marker is wanted and does not exist yet. There is already a
+caller: `plan.Warnings`, the things "worth knowing that stop nothing".
 
 **Two columns, nothing ragged.** The marker in the first, the text in the
 second, and every continuation line in the second as well.
