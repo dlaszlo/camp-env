@@ -90,12 +90,17 @@ entry point, a git fetch through the declared command — in
 
 ## Terminal-gated: the privileged mode
 
-sudo needs a terminal, so these are for the owner to run by hand. The
-code is written and its pieces are unit-tested where they can be — the
-helper refuses a job it does not understand, the teardown instruction is
-built from the record alone with the configuration deleted, running the
-front end as root is refused — but the end-to-end behaviour has not been
-exercised on this machine.
+sudo needs a terminal, so these are for the owner to run by hand.
+
+**`camp up` and `camp down` were each run once, by hand, on 2026-08-16,
+and both completed.** That first run was worth the whole exercise: the
+mode had never been executed before, and it carried six defects — four
+that the reviews had found and two that only running it could show, the
+shared parent that `MS_MOVE` refuses and the shared destination that marks
+the moved mounts shared. All six are repaired, and a seventh, a failed
+`up` leaving root-owned residue nothing could clear, with them.
+
+Everything below is still unrun. It is the next session's first job.
 
 Run, in an environment whose `camp plan` is clean:
 
