@@ -172,7 +172,32 @@ themselves; both are written up in
 `log/2026-08-16-recovery-from-the-record.md`, along with what the
 boundaries turn out to be, which is not quite what §12's sentence says.
 
-**4, 5 and 7 are unrun.** 4 needs a person, because it is a `sudo camp
+**4, `sudo camp up` is refused — passed.** It stops before anything: no
+mount, no record, the workspace still writable and carrying no self-bind,
+and the message says to run it without sudo.
+
+**The two manual ones passed as well.** `tmux attach` from an outside
+terminal onto a session started with `camp run -- tmux new-session -d`
+lands in the composed tree: `pwd` is the live path, `ls` shows both
+repositories merged, and nine mounts are visible from inside. And Ctrl-C
+in a `camp shell` stops the workload and leaves the shell standing --
+`sleep 300` interrupted, `$?` is 130, the session ends only at `exit`.
+
+**5, the `trusted.overlay.*` forensics — ran.** It needed a throwaway
+environment, because camp's own compositions cannot produce a copy-up at
+all: every workspace root entry carries a read-only guard, and the one
+hole is a directory named in `allow_overlap` (CAMP-REVIEW-005). What the
+privileged mount leaves, and what survives the teardown, is written up in
+`log/2026-08-16-copy-up-forensics.md`. The short version: the code
+repository's own root ends up carrying `trusted.overlay.uuid` and
+`trusted.overlay.impure` permanently, invisible to git and unreadable
+without root.
+
+**7, the rename race — the mechanism is tested, the race is not.** The
+helper's comparison between what it opened and what the front end checked
+now has a unit test, including the refusal's wording and the case where
+there is nothing to compare. Constructing the race itself still needs a
+debugger or a slow filesystem. 4 needs a person, because it is a `sudo camp
 up` and the testing rule deliberately does not cover it. 5 has no
 copy-up candidate in this environment: every workspace root entry is
 either bind-mounted or shadowed by the code repository, so measuring it
