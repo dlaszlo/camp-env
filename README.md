@@ -21,7 +21,9 @@ reference/     what is true now — look it up, no dates
 log/           what happened, in order — dated, never edited afterwards
 ├── 2026-08-16-build-measurements.md
 ├── 2026-08-16-handoff-ssh-inside-a-session.md
-└── 2026-08-16-session-handoff-state-of-the-work.md
+├── 2026-08-16-session-handoff-state-of-the-work.md
+├── 2026-08-16-design-session-environment.md
+└── 2026-08-16-review-and-final-plan-session-environment.md
 ```
 
 The split is the ordering rule, and it is worth keeping. A reference
@@ -62,6 +64,19 @@ problems this one belongs to, and what is still undecided.
 **`log/2026-08-16-session-handoff-state-of-the-work.md`** — where the work
 stands: what is done, what is open, and the facts about this environment a
 new session would otherwise rediscover.
+
+**`log/2026-08-16-design-session-environment.md`** — the design that
+answers the ssh handoff: one top-level `environment:` key, applied to a
+namespace session's workload, with the candidates weighed and the
+alternatives closed.
+
+**`log/2026-08-16-review-and-final-plan-session-environment.md`** — that
+design reviewed against the code and adopted with amendments, then
+reshaped in a second round with the owner: the keys live under a
+`session:` section, the privileged mode announces the section instead of
+refusing it, and the commands narrate their steps. The normative result
+is in `spec.md` (§4 C35, §6, §14, §16, §17, §19, §23); this file is the
+review record and the build order.
 
 ## Where this stands
 

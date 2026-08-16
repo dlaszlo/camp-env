@@ -291,6 +291,28 @@ item here is wrong.
   the same composition on ext4 (`rw,relatime`) works. The remount code
   must OR in the source's locked flags; `doctor` warns when the
   environment sits on such a filesystem.
+- **C35 (measured; `log/2026-08-16-handoff-ssh-inside-a-session.md`
+  records the commands).** A namespace session maps exactly one uid —
+  the caller's own — so every host file owned by anyone else reads
+  back as the overflow id (65534, `nobody`). No unprivileged route
+  changes that: a process may map only ids it owns, subordinate
+  ranges are the caller's and not root's, and an idmapped mount may
+  use only ids already mapped in the caller's namespace. Two
+  consequences, in opposite directions: a program that **validates**
+  a file's owner refuses it inside a session — OpenSSH refuses the
+  system-wide client configuration before it opens a connection, so
+  `ssh` and `git push` over ssh fail — and a program that **records**
+  ownership into an artefact (`tar`, `rsync -a`, an image build)
+  silently records the projected owner, with no error anywhere. The
+  session's `environment:` map (§6) is how a composition adapts the
+  first kind; the privileged mode, which builds no user namespace, is
+  the ownership-faithful route for the second; nothing repairs the
+  view itself. Related measurements, same log: git resolves `ssh` through
+  `PATH`, while `scp` and `sftp` start ssh from a compiled-in
+  absolute path and only their own invocation can carry `-F`; a
+  workload started by `camp run` reads no shell startup file, so an
+  alias can never reach it; and ssh has no environment variable for
+  its own options.
 - `flock` is inode-based and crosses namespaces *(read)*; a lock fd
   survives in any child that inherited it (§13).
 - `newuidmap`/`newgidmap` are **not installed** on this machine;
@@ -443,6 +465,14 @@ steps:
   - git_exclude                      # the shipped git step: generates the
                                      # exclude and binds it over
                                      # live/.git/info/exclude (§10, §19)
+
+# The session camp run / camp shell starts is configured in its own
+# section; camp up announces that it does not apply there. The block
+# later in this section has the grammar.
+#
+# session:
+#   environment:
+#     GIT_SSH_COMMAND: "ssh -F ${HOME}/.ssh/config"
 ```
 
 Rules of the file:
@@ -549,6 +579,161 @@ pathname engine needs a normative grammar, not conventions):
   file or a directory, nothing else: a symlink, socket, FIFO or
   device at a lower root refuses (the inventory records types — §18 —
   so the refusal can say what changed).
+
+**The session — `session:`.** An optional top-level section holding
+everything that configures *the session camp starts*: the supervised
+run with a workload that `camp run` and `camp shell` create and that
+ends with its last process. It configures the session and never the
+tree — what is mounted, protected and generated is the composition
+itself, the same in every mode, and stays outside this section. Two
+keys live here; an unknown one refuses like any other (invariant 6).
+
+```yaml
+session:
+  # identity: uidmap        # route B; absent means route A (§14)
+  environment:
+    GIT_SSH_COMMAND: "ssh -F ${HOME}/.ssh/config"
+    PATH: "$CAMP_LIVE/.workspace/bin:$PATH"
+```
+
+**What the host mode does with it.** `camp up` mounts the composed
+tree and exits; it starts no session, and every process that enters
+the tree arrived from outside camp. So this section cannot apply
+there — and it is neither refused nor silently skipped but
+**announced**: `camp up` prints one line naming the section, saying
+it configures the session this mode does not start, and naming
+`camp run` and `camp shell` as where it applies; `plan --privileged`
+and `explain --privileged` carry the same line. A refusal was
+weighed and rejected: it would force editing the configuration to
+move between the modes while adding nothing the announced line does
+not already say — the failure shape being guarded against, a
+declared setting that *looks applied* while nothing uses it, cannot
+survive an explicit statement of non-application. The section's
+name is the tool's own word for the scoped object; it is
+deliberately not a mode name — the configuration describes the
+composition and the *command* chooses the mode — and not
+"sandbox", because camp documents precisely that it is not one
+(invariant 8). Per-key mode flags (`sandbox_only:`-style) were
+rejected too: on the keys where such a flag would be legal it would
+be mandatory, so it records no decision, and everywhere else it
+would be refused — grammar simulating a choice that does not exist.
+`down` never reads the section at all: it tears down from its
+record (invariant 4).
+
+**`session.identity`** selects the uid route of the session's
+namespace — absent is route A, `uidmap` is route B; the two routes,
+and why a silent fallback between them is forbidden, are §14's.
+
+**`session.environment`** is a mapping from environment-variable
+names to string expressions, resolved while the session is prepared
+and applied to the workload the session's init starts — and,
+through ordinary process inheritance, to everything descended from
+it. It is not `env:`: `env:` names the environment *root
+directory*; this declares the *process environment* the workload
+receives.
+
+**Why it exists.** A session shows programs a view they can disagree
+with — C35's ownership view is the measured instance: OpenSSH refuses
+the system-wide configuration file it can attribute neither to root
+nor to the user, so `ssh` and `git push` over ssh fail before a
+connection is opened. camp does not repair the view (C35: nothing
+can) and it carries no program names; the composition adapts a
+program through the control the program already has — an option
+variable such as git's `GIT_SSH_COMMAND`, or command resolution
+through a prepended `PATH` whose entries live in the workspace
+repository, versioned with the environment they serve. The next
+program that disagrees the same way is adapted by the same key, with
+no change to camp. And the declaration is the user's decision,
+recorded and diffable — the same principle as `allow_overlap` being
+the escape hatch instead of a `--force`. What this deliberately is
+not: a transparent repair. A plainly typed `ssh` works through a
+workspace-owned launcher the composition provides once (git needs
+only the variable); a program that silently records the projected
+owner into an artefact is corrected by no variable at all — the
+privileged mode is the ownership-faithful route for that work.
+
+**Shape.**
+
+- The value of `environment:` is a mapping; every value is a YAML
+  string scalar. A number, boolean, null, sequence or mapping is
+  refused, never coerced — quoting is the exact repair for a
+  numeric-looking value. Mapping order carries no meaning; reports
+  render names in byte order, so two orderings of the same map are
+  the same composition.
+- A name is nonempty and contains neither `=` nor NUL — the shape
+  `execve` receives. A value may hold anything the YAML reader can
+  represent except NUL. camp validates structure, not meaning: it
+  keeps no registry of programs' variable names, so a misspelling of
+  one is legal to camp and invisible to the program — a named limit,
+  not a validation camp pretends to perform.
+- Names beginning `CAMP_` are reserved: they are camp's own, and a
+  configuration cannot declare them. `PWD` is reserved too — camp
+  sets both the workload's working directory and the matching value,
+  and a declaration disagreeing with reality would put a lie in the
+  environment.
+- An explicitly empty map is legal and declares nothing. Setting a
+  variable to the empty string is expressible; unsetting an
+  inherited variable is not in the language — no case needs it yet,
+  and absence-versus-empty stays a distinction the map can state.
+
+**Interpolation** — a single, simultaneous, non-recursive data
+substitution; there is no shell anywhere in it.
+
+- `$NAME` and `${NAME}` both reference the identifier grammar
+  `[A-Za-z_][A-Za-z0-9_]*`; the braced form exists to delimit a name
+  from adjacent text (`${CAMP_LIVE}bin`), not to admit other names.
+  `$$` is one literal dollar. Anything else after `$` — a lone
+  dollar, an invalid name, an unclosed brace — is refused with the
+  byte offset and the `$$` repair.
+- A reference reads the environment the camp command was started
+  with, with three exceptions. `$CAMP_LIVE` resolves to camp's
+  authoritative live path, never to an inherited value — a session
+  started from inside another session must see the composition it is
+  entering, not the one it came from. Every other inherited `CAMP_*`
+  name is not an interpolation input, and a reference to one is
+  refused as undefined. `$PWD` is refused outright, with the reason:
+  the invoking directory is not carried into the session, so the
+  reference is ambiguous — the composed tree is `$CAMP_LIVE`, and
+  that is what the message says to write.
+- All declarations resolve at once against that one base. A declared
+  `PATH: "prefix:$PATH"` reads the inherited `PATH`, and `A: "$B"`
+  reads the inherited `B`, never a sibling declaration — mapping
+  order stays meaningless and a cycle cannot be expressed.
+- An inherited name set to the empty string expands to empty; a name
+  that is absent refuses. Silently replacing an absent name with
+  empty text would make a typo look applied — the failure shape
+  refused everywhere else.
+- Inserted bytes are not scanned again: a value arriving through
+  `$HOME` that itself contains `$X` contributes those literal bytes.
+  There is no `~` expansion, no command substitution, no defaulting,
+  no word splitting, no globbing, no quote or backslash processing.
+
+**The effective environment.** The workload's environment is one
+duplicate-free list: inherited entries keep their relative order and
+bytes; an entry a declaration overrides is replaced; new names are
+appended in byte order; the two camp-owned names `CAMP_LIVE` and
+`PWD` — both the live path — come last and always win. These two are
+the whole camp-owned contract, and there is deliberately no session
+identifier among them: an exported marker invites host-side wrappers
+that switch on it, which is wiring the host through another door.
+Everything the map does not name is inherited byte-for-byte.
+
+**Where it applies, and where it never does.** To the workload, after
+the session's mounts are verified and the mount capability is
+dropped — declared values are inert data until then, because a
+configured `PATH` or `LD_PRELOAD` must never touch a process still
+holding `CAP_SYS_ADMIN` (§14). Not to camp's own processes, not to
+the init, not to the generation step — which keeps its own contract
+(§19) and runs before any workload exists — and not to the
+end-of-session report. Whoever edits the map holds user-level
+control over what the workload executes; that is the point, it is
+the same authority the custom generator already grants, and it never
+reaches a process with privileges. The map is configuration, not a
+secret store: resolved values are ordinary environment bytes,
+readable by any same-uid process (invariant 8). A literal secret
+does not belong in a versioned file; an inherited reference
+(`"$GITHUB_TOKEN"`) is the shape that keeps it out of one, and §16's
+rendering rule keeps it out of every transcript.
 
 ## 7. The composition — the full mount sequence
 
@@ -1105,7 +1290,7 @@ for those.
      `/proc` (pids inside are namespace pids; holder-naming and `ps`
      need the local view), performs the mount sequence of §7, runs
      §15's verification, **drops the ambient capability set**, and
-     only then forks the workload.
+     only then starts the workload, with §6's effective environment.
   3. **The handshake**: the init reports over the pipe exactly once —
      "up, workload started", or a §15/§17 refusal, which the launcher
      prints. The launcher then waits not for the init but for the
@@ -1126,6 +1311,24 @@ for those.
      kernel (C21); there is no `down`, no state record, nothing to
      clean *(measured)*. A `kill -9` of the init loses the report and
      nothing else — the kernel still tears down to zero.
+
+- **The workload's environment** is §6's effective environment,
+  built by the init and attached to the workload child explicitly —
+  the init itself is never mutated, and both halves of the session
+  resolve the declarations from the same inherited snapshot the
+  launcher started with. The application point is after the
+  capability drop, never before: nothing declared is placed on the
+  init's own `execve` environment or used to resolve the init's own
+  executables, so a configured `PATH` or `LD_PRELOAD` cannot touch a
+  process still holding `CAP_SYS_ADMIN`, and a failed drop starts no
+  workload. An empty argv means a shell, chosen from the *effective*
+  `SHELL`; a bare command name resolves against the *effective*
+  `PATH` — resolving against the init's inherited path while
+  printing the declared one would select the host's command under a
+  plan that says otherwise, the looks-applied failure this design
+  refuses everywhere. A command that lookup cannot find fails
+  loudly, saying the configured `PATH` was searched, without
+  printing inherited path bytes.
 
 - **The end-of-session report** (owner decision, 2026-08-16; closes
   the review's finding that §10's and §20's promised detections had
@@ -1183,7 +1386,8 @@ for those.
   (owner round, 2026-08-16): route A is the only automatic route —
   route B never engages by silent fallback, because the two routes
   present different uid worlds to the workload; it is chosen
-  explicitly in the configuration (`identity: uidmap`). Route B's
+  explicitly in the configuration (`session.identity: uidmap` —
+  §6). Route B's
   maps are podman's `keep-id` shape: the caller's uid and gid map to
   themselves, 0 and the rest of the range come from subuid/subgid via
   `newuidmap`/`newgidmap`, and `setgroups` stays permitted on this
@@ -1283,6 +1487,19 @@ for those.
   cannot be removed is an **error**: named, reported, non-zero exit
   (§16), never a pretend success. `status` distinguishes *up*,
   *partly up*, *down*.
+- **A present `session:` section is announced, never applied and
+  never refused.** This mode starts no session — `camp up` mounts
+  and exits, and every process that enters the tree arrived from
+  outside camp — so `session.identity` has no namespace to shape
+  and `session.environment` has no workload to receive it. `camp
+  up` prints one line saying exactly that, naming `camp run` and
+  `camp shell` as where the section applies; `plan --privileged`
+  and `explain --privileged` carry the same line. Nothing is
+  silently skipped, nothing pretends to be applied, and the
+  configuration needs no editing to move between the modes (the
+  full weighing — announcement over refusal, section over flags —
+  is §6's). `down` is untouched: it tears down from its record
+  (invariant 4).
 
 ## 15. Verification — what `up` checks, every time
 
@@ -1416,6 +1633,54 @@ read-only and why, where the backing store is, what can never enter a
 commit, how worktrees behave), generated from the live configuration
 so it cannot go stale.
 
+For a namespace composition, `plan` also prints a **session** block:
+the identity route, the two camp-owned values expanded — they are
+paths the plan already shows — every declared name with a safe
+reconstruction of its expression, whether it overrides or newly
+appears, and the note that everything else is inherited unchanged
+and applied after the capability drop. Planning the privileged mode
+with a `session:` section present, the block is replaced by the one
+announcement line (§6). The rendering shows literal configuration text
+(it is already in the file being described) but replaces every
+inherited insertion with `<inherited NAME>` rather than its bytes:
+`plan` and `explain` output is routinely captured — terminals, agent
+transcripts, pasted issues — and an inherited token must not land in
+a transcript because somebody asked what would mount. No heuristic
+redaction by name (`TOKEN`, `PASSWORD`) exists; guessing which
+values are secret would hide some and miss others without a rule.
+The resolved bytes reach exactly one place, the workload's own
+environment; they appear in no report, no state record, no helper
+job, and nothing camp writes to disk. Control characters in what is
+shown use §18's reversible escaping.
+
+**The commands say what they do, in order, as they do it.** `camp
+run`, `camp shell` and `camp up` each print a short line per frame
+step to stderr as the step completes: the locks, the validation and
+gate, generation, the mounts and their verification; a session adds
+the identity route and the declared environment names as they are
+applied; `camp up` adds the record, the helper, the move, its two
+machine-wide effects, and — when the configuration has a `session:`
+section — the announcement line (§6). The identity line carries the
+ownership view in one clause — only the caller's uid is mapped, a
+file owned by anyone else appears as `nobody` — because that is the
+fact of *this run* that a reader of a captured log needs when an
+artefact's ownership surprises them later (C35). The lines state
+what happened; they name no hypotheticals, print no inherited
+environment bytes, and are few enough to be read rather than
+scrolled past.
+
+`explain` carries a "Session environment" section with the same
+rendering, and — in the namespace mode — an "Ownership view" section
+covering the whole of C35's class, not one program: the programs
+that refuse an owner they cannot attribute (ssh is where it is met),
+the operations rootless mode intentionally lacks (setuid elevation,
+`chown` to an unmapped id), and the silent members — artefact
+builders recording the projected owner with no error anywhere —
+with the composition-owned launcher pattern and the privileged mode
+named as the ownership-faithful route. It recommends no host-side
+change: no global git configuration, no shell alias, no file outside
+the composition.
+
 `list` reads every record in the state directory (§12) and prints one
 line per composition — live path, phase, age — newest first; a record
 it cannot parse is printed as *corrupt*, with its path, and never
@@ -1479,6 +1744,24 @@ act, the exact commands (§21):
   target, an empty, `.` or `..` component, a repository name
   containing `/`, or two repositories resolving to the same
   directory;
+- a `session:` entry camp does not know, or an `identity:` value
+  that is neither absent nor `uidmap` (§6, §14) — and a `session:`
+  section is *announced* in the privileged mode, never refused and
+  never silently skipped (§6);
+- a `session.environment` map violating §6's own grammar, each with
+  its own rule and repair: a value that is not a YAML string
+  (`environment-shape`); a name that is empty or contains `=` or NUL
+  (`environment-name`); a declaration of `PWD` or of any
+  `CAMP_`-prefixed name (`environment-reserved`); a NUL byte in a
+  value (`environment-value`); a malformed `$` expression, with the
+  byte offset and the `$$` repair (`environment-expansion`); a
+  `$PWD` reference, with `$CAMP_LIVE` named as what to write
+  instead; a reference to a name the invoking environment does not
+  define (`environment-undefined`) — an absent variable is never
+  silently an empty string. Syntactic problems are collected in the
+  parser's one pass; undefined references need the command's own
+  inherited environment and are added during planning; no partial
+  map is ever applied;
 - a `generate:` step alongside `git_exclude`, or more than one
   generation step (§19 — there is one exclude payload);
 - generator output failing the hostile-data checks (§19): an islands
@@ -1570,7 +1853,10 @@ git.
   no expansion. cwd: `work/<hash>/gen/`, so a naive generator's
   relative writes land in camp's scratch, never in a repository.
   Environment: the invoking user's, plus `CAMP_GEN_IN`,
-  `CAMP_GEN_OUT`, `CAMP_ENV`, `CAMP_LIVE` (absolute paths). stdin is
+  `CAMP_GEN_OUT`, `CAMP_ENV`, `CAMP_LIVE` (absolute paths). The
+  `environment:` map (§6) is absent from this list on purpose: it
+  declares the *workload's* environment, and generation runs before
+  any workload exists. stdin is
   `/dev/null`; stdout and stderr pass through to the terminal. No
   default timeout — camp is interactively driven (C33) — but an
   optional `timeout: <seconds>` field kills the step's process group
@@ -1778,6 +2064,25 @@ this session's measurements did), or wait for the install.
 - **Hooks at the `mounted`/`pre-down`/`post-down` lifecycle points**
   (§19): configured code runs only at `prepare` today; a general
   hook mechanism waits for a real use.
+- **The workload environment's open measurements** (§6): whether the
+  desktop keyring/libsecret path works across the namespace — a
+  `git push` that cannot reach the keyring is the same user-visible
+  failure as the ssh refusal — and the in-composition OpenSSH run:
+  `ssh`, `scp`, `sftp` and `git ls-remote` through workspace-owned
+  launchers against a real peer, which needs the installed binary
+  and a person for credentials and host-key decisions.
+- **A general "host path as a user-owned copy" mount kind** —
+  deferred, not dismissed: it would relax the rule that every mount
+  target lies inside the composed tree, which is what makes the plan
+  walkable on paper. Revisit only for a program the `environment:`
+  map cannot adapt.
+- **A sudo-created, identity-preserving run mode** — a namespace
+  session that keeps host ownership visible, the only route that
+  would also fix silently wrong artefact ownership. Rejected for
+  now: a privilege interaction per session and a long-lived
+  privileged launcher in place of the narrow helper. Revisit only if
+  two common programs prove unadaptable through `environment:`, or
+  ownership-faithful artefact builds inside sessions become routine.
 - **`resolve`** (per-path "what happens on write here" from the old
   model) — nice-to-have; `explain` + this spec cover the need for now.
 - **`.mcp.json` placement** in the migration (§5.2).
