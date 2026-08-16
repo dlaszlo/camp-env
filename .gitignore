@@ -1,0 +1,17 @@
+# The composed tree. Not a directory of files but the composition itself:
+# built at every session, empty between them. It must exist and be empty
+# before camp will start, so it is created by hand after cloning and never
+# committed -- a placeholder file in it would make camp refuse.
+/camp-live/
+
+# Machine-local, and neither of them is a decision anyone can review.
+/.camp/work/
+/.camp/storage/
+/.camp/reports/
+
+# Separate repositories on this machine, and how they should be published
+# is not settled. Ignored rather than added, because adding them would
+# record a pointer to commits a clone cannot fetch -- a repository that
+# looks complete and is not. The README says what is missing and why.
+/camp-workspace/
+/camp-notes/

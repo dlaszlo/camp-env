@@ -1,0 +1,3 @@
+[submodule "camp"]
+	path = camp
+	url = https://github.com/dlaszlo/camp.git

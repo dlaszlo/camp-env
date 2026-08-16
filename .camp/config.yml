@@ -1,0 +1,47 @@
+# How camp's own working directory is composed.
+#
+# The product, the development environment and the design record are three
+# separate repositories, and this file is the only place that knows about
+# all three.
+
+env: /home/dlaszlo/dev/camp-env
+merged: camp-live
+
+repositories:
+  - { name: workspace, path: camp-workspace }
+  - { name: code,      path: camp }
+  - { name: notes,     path: camp-notes }
+
+overlayfs:
+  # Read-only underneath: what a session needs to see and must not write.
+  lower: [workspace]
+  # On top, and the only place ordinary writes land: the product.
+  upper: code
+
+# Each repository needs its own .gitignore, and it is a file overlap, so
+# the composed tree shows the code repository's copy -- which is correct,
+# because the live tree is governed by the product's ignore rules.
+allow_overlap: [.gitignore]
+
+steps:
+  - mount_rw:
+      # Both repositories have a .git at their root and directories merge,
+      # so without this bind the two histories would union. camp never adds
+      # it on its own; leaving it out is caught by the overlap gate.
+      - { source: "code/.git", target: ".git" }
+
+      # The design record: its own repository, writable from inside,
+      # because it is written while the work happens. It cannot live in the
+      # workspace, which is read-only in there on purpose.
+      - { source: "notes",     target: ".notes" }
+
+  # Half repository, half machine state: what the workspace tracks stands
+  # read-only, and settings.local.json and the worktrees land in
+  # machine-local storage underneath.
+  - mount_islands:
+      - { source: "workspace/.claude", target: ".claude" }
+
+  # Reads git, produces the exclude and the islands expansions, and binds
+  # the exclude over the composed tree's copy. After the .git bind, because
+  # its target lies inside it.
+  - git_exclude

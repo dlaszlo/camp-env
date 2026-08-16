@@ -1,0 +1,17 @@
+lower	directory	.claude
+lower	directory	.git
+lower	directory	.notes
+lower	file	.gitignore
+lower	file	CLAUDE.md
+upper	directory	.git
+upper	directory	cmd
+upper	directory	docs
+upper	directory	examples
+upper	directory	internal
+upper	directory	packaging
+upper	file	.gitignore
+upper	file	LICENSE
+upper	file	README.md
+upper	file	camp
+upper	file	go.mod
+upper	file	go.sum
