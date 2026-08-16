@@ -1,0 +1,3 @@
+This directory is a mount point. camp binds the design-record
+repository over it read-write; git cannot track an empty directory, so
+this file exists to keep the directory committed.

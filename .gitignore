@@ -1,0 +1,5 @@
+# Claude Code's machine-local files. They land in camp's storage inside a
+# composition; this keeps them out of the repository when the workspace is
+# used on its own.
+/.claude/settings.local.json
+/.claude/worktrees/
