@@ -9,9 +9,8 @@
 /.camp/storage/
 /.camp/reports/
 
-# Separate repositories on this machine, and how they should be published
-# is not settled. Ignored rather than added, because adding them would
-# record a pointer to commits a clone cannot fetch -- a repository that
-# looks complete and is not. The README says what is missing and why.
-/camp-workspace/
-/camp-notes/
+# What used to be here: camp-workspace and camp-notes, ignored while it was
+# undecided how to publish them. They are folded in now, with their history,
+# and a clone brings the whole environment down with it. The code is the one
+# thing that is not here: camp is a submodule, because it is the product and
+# it is published on its own.
