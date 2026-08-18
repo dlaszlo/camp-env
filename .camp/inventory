@@ -10,6 +10,7 @@
 # symlink's target.
 lower	directory	.claude
 lower	directory	.notes
+lower	directory	.workspace
 lower	file	.gitignore
 lower	file	CLAUDE.md
 lower	file	ENVIRONMENT.md

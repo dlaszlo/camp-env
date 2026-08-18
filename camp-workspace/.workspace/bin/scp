@@ -1,0 +1,19 @@
+#!/bin/sh
+# The composition's own scp, reached only because the session's PATH
+# puts this directory first.
+#
+# Why it exists: a session maps one user id, so every file owned by
+# anybody else reads back as 'nobody' -- and ssh refuses a system-wide
+# configuration file it can attribute to neither root nor you. -F names
+# the file to read and, in doing so, makes ssh skip the system-wide one.
+# scp and sftp need their own launchers: they start ssh from a compiled-in
+# absolute path, so wrapping ssh alone does not reach them.
+#
+# The original is found through $OUTER_PATH -- the path as it was before
+# this directory was prepended -- and never through a fixed directory,
+# which would be right on one distribution and wrong on the next. Nothing
+# here tests whether it is inside a session: being first on PATH is the
+# whole condition. If the original is not found it exits 127 rather than
+# doing something approximate.
+original=$(PATH="$OUTER_PATH" command -v scp) || exit 127
+exec "$original" -F "$HOME/.ssh/config" "$@"
