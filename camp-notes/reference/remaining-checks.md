@@ -191,8 +191,67 @@ mode's `down` as what removes it. The function existed with no caller at
 all. Repaired in camp `8ddf464`, under the live lock; it wants one more
 up-and-down to be measured.
 
-**Still to run on this path**: item 6's second half (the kill-point
-matrix). Items 3, 4, 5 and 7 are unaffected by the change.
+**Item 6, second half: the kill-point matrix, all three boundaries.**
+`camp up` was started and killed with `SIGKILL` at each of them; after
+each, `camp status` had to describe what was there and `camp down` had to
+converge -- nothing mounted, no record, the work directory gone, the live
+directory empty, the workspace writable.
+
+1. *After the record, before any mount* (killed the instant the record
+   appeared in phase `mounting`): nothing mounted. status named the phase
+   and both ways out; down converged.
+2. *During the helper's work*: the helper is root's process and not the
+   test's to kill, so it finished the whole job -- twelve mounts standing
+   with the front end gone and the record still saying `mounting`. status
+   said exactly that: every recorded mount present, eleven of them with
+   no recorded identity because the record was written before the mounts
+   were made, and *the run stopped between the helper's work and the
+   check that follows it*. down converged.
+3. *At the move*: shell polling could not hit the two milliseconds
+   between the move and the front end's next step, so a watcher reading
+   mountinfo in a tight loop sent the signal the moment the overlay
+   appeared at the live path. Same shape as 2, and down converged.
+
+Worth keeping: in two of the three the record carries **no identities**,
+because the front end merges the helper's reply into the record only
+after reading it. A teardown that insisted on identities would have
+walled the user in behind twelve mounts, which is why the record's
+`JobTarget` says a missing identity means "unmount what you were given".
+That decision is now measured rather than reasoned.
+
+**Item 7, the rename race -- run, and it takes two swaps to see both
+halves.** A watcher replaced the `.notes` mount source in the window
+between the front end's identity capture and the helper's mount:
+
+- *Replaced with a symlink*: refused by the resolution itself, before
+  there was anything to compare -- *a component of the path is a symbolic
+  link: camp-notes in /home/dlaszlo/dev/camp-env*. Nothing mounted, and
+  the workspace writable again.
+- *Replaced with a different real directory*: refused by the identity --
+  *camp-notes is not the object camp checked: it was 64513:6308409 and it
+  is now 64513:6295314. Something replaced it between the check and the
+  mount. Nothing has been mounted.* The helper removed everything it had
+  made before it stopped.
+
+**And the window that is not covered.** Swapping the same source *before*
+the job is built -- triggered by the record appearing, which happens
+first -- is accepted: the front end takes each operand's identity when it
+builds the job, so a directory replaced between validation and that
+moment is the one that gets mounted, with the validation having looked at
+something else. The composition came up with the impostor at `.notes`.
+Whether that window is worth closing (identities taken at validation and
+carried forward, or the validation re-run against the job) is a design
+question, not a defect in what the helper promises: everything from the
+job onwards is exactly what was checked.
+
+**A rolled-back `up` leaves camp's work directory**, because the record
+is deliberately forgotten when the rollback is complete and it is `down`
+that removes the directory. It is not a leak: the next `camp run` in the
+environment sweeps it, which is what happened here, and `doctor` lists it
+in the meantime. Worth a decision only if the privileged mode is used
+without any namespace session.
+
+Items 3, 4 and 5 are unaffected by the change and were not repeated.
 
 **The sudoers rule is back**, in the same shape and for the same reason
 as on 2026-08-16 -- `/etc/sudoers.d/camp-testing`, the two helper
