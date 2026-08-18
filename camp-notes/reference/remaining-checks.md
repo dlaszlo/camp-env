@@ -135,6 +135,20 @@ and check, from a **second terminal**:
    camp checked". Constructing this by hand needs a slow filesystem or a
    debugger breakpoint; the code path is `privileged.checkIdentity`.
 
+### These need running again, once
+
+*(2026-08-18.)* The results below stand as findings about the design, and
+they were measured against a mount path that no longer exists. The
+composed tree is now made with the kernel's mount API -- the layers as
+descriptors -- and the final move is `move_mount` on two pinned
+descriptors rather than `MS_MOVE` on two names. The namespace suite
+exercises the new overlay path at every run; the helper's own path, which
+is the one root walks, has not been executed since the change.
+
+So: after installing today's binary, one `camp up` and one `camp down`,
+and items 1, 2 and 6 again. Everything else in this section is unaffected
+by that change and does not need repeating.
+
 ### What has run, and what it found
 
 On 2026-08-16, in the session after the first one. Running them found
