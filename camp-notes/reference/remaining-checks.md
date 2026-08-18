@@ -169,10 +169,38 @@ root-owned.
 process outside the composition both fail `EROFS` while it is up, and
 succeed again after `down`.
 
-**Still to re-run on this path**: item 1 (staging invisibility -- it is
-about the move, and the move is what changed; it needs a sampler in a
-second terminal while an `up` is in flight) and item 6 (the kill-point
+**Item 1 re-measured, and it holds on the new move.** A sampler outside
+the composition, listing the live path about 230 times a second and
+printing only when the listing changed, saw `entries=0` and then one jump
+to the whole tree 358 ms later. No intermediate value: `move_mount` makes
+the tree appear at the live path in one step, exactly as `MS_MOVE` did.
+
+**Item 6, first half: the record alone is enough.** With the composition
+up, the configuration file was moved aside. `camp status` described the
+composition from the record, said the configuration cannot be read, and
+said that changes nothing about the teardown. `camp down` then removed
+twelve of twelve from the record alone and reported that the drift and
+leak scans were skipped because they need the configuration -- which is
+the honest form of an omission that would otherwise read as "no drift
+found".
+
+**What that run found.** The work directory survived the whole lifecycle:
+`work/<hash>/` still held the generated exclude, the islands expansion
+and the staging point after a clean `down`, although §12 names this
+mode's `down` as what removes it. The function existed with no caller at
+all. Repaired in camp `8ddf464`, under the live lock; it wants one more
+up-and-down to be measured.
+
+**Still to run on this path**: item 6's second half (the kill-point
 matrix). Items 3, 4, 5 and 7 are unaffected by the change.
+
+**The sudoers rule is back**, in the same shape and for the same reason
+as on 2026-08-16 -- `/etc/sudoers.d/camp-testing`, the two helper
+subcommands of the installed binary, nothing else. It is what let the
+runs above happen unattended, and it is to be removed when this group is
+finished. It is also why a binary built anywhere else cannot elevate: an
+`up` from a scratch build is refused for the password it cannot ask for,
+which is the rule doing its job.
 
 ### What has run, and what it found
 
