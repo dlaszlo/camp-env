@@ -135,19 +135,44 @@ and check, from a **second terminal**:
    camp checked". Constructing this by hand needs a slow filesystem or a
    debugger breakpoint; the code path is `privileged.checkIdentity`.
 
-### These need running again, once
+### Run again on the new mount path, 2026-08-18
 
-*(2026-08-18.)* The results below stand as findings about the design, and
-they were measured against a mount path that no longer exists. The
-composed tree is now made with the kernel's mount API -- the layers as
-descriptors -- and the final move is `move_mount` on two pinned
-descriptors rather than `MS_MOVE` on two names. The namespace suite
-exercises the new overlay path at every run; the helper's own path, which
-is the one root walks, has not been executed since the change.
+The results further down were measured against syscalls camp no longer
+makes: the composed tree is now made with the kernel's mount API, the
+layers as descriptors, and the move is `move_mount` on two pinned
+descriptors rather than `MS_MOVE` on two names. So the whole lifecycle
+was run once more, with the binary built from `3148185`.
 
-So: after installing today's binary, one `camp up` and one `camp down`,
-and items 1, 2 and 6 again. Everything else in this section is unaffected
-by that change and does not need repeating.
+**`camp up` and `camp down` both completed, and the new path is in the
+kernel's own words.** The composed tree's line reads
+
+```
+overlay none rw,lowerdir+=<workspace>,upperdir=<code>,workdir=<work>,nouserxattr
+```
+
+-- `lowerdir+` and the source `none` are the mount API's signature, and
+the paths recorded are the real ones rather than the `/proc/self/fd/N`
+strings the old API would have kept for the life of the mount. The
+post-move verification passed on all eleven mounts, which is also the
+first time its reading of `lowerdir+` was exercised under root. Every
+mount is private. `move_mount` carried the ten submounts with the tree.
+
+**The teardown was complete**: twelve of twelve removed (the eleven
+recorded, plus the self-bind the move needed), the composed tree's
+directory empty afterwards, the workspace writable again, the record
+forgotten, and the kernel's root-owned `work/` gone -- which is the
+helper's fsx path running as root, resolving component by component
+beneath the job's base and following no symlink. Nothing under `.camp` is
+root-owned.
+
+**Item 2 re-measured**: `touch` and `mkdir` in the workspace from a
+process outside the composition both fail `EROFS` while it is up, and
+succeed again after `down`.
+
+**Still to re-run on this path**: item 1 (staging invisibility -- it is
+about the move, and the move is what changed; it needs a sampler in a
+second terminal while an `up` is in flight) and item 6 (the kill-point
+matrix). Items 3, 4, 5 and 7 are unaffected by the change.
 
 ### What has run, and what it found
 
