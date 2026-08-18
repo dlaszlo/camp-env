@@ -4,10 +4,11 @@
 # make camp refuse the composition. A session creates it.
 /camp-live/
 
-# Machine-local, and neither of them is a decision anyone can review.
+# Machine-local, and none of them is a decision anyone can review.
 /.camp/work/
 /.camp/storage/
 /.camp/reports/
+/.camp/logs/
 
 # What used to be here: camp-workspace and camp-notes, ignored while it was
 # undecided how to publish them. They are folded in now, with their history,
