@@ -1,6 +1,8 @@
 # The output work is finished, and the review's code findings are closed
 
-Date: 2026-08-18. camp from `e619e9b` to `ca6fabd`, twenty-three commits.
+Date: 2026-08-18. camp from `3975b37` to `8ddf464`, twenty-six commits
+(the last two are the dead islands field and the work directory a teardown
+now removes, both found after this file was first written).
 Both gates green with nothing skipped: `go build ./... && go vet ./... &&
 gofmt -l . && go test ./...` on the host, and
 `camp run -- go test ./internal/... -count=1` through the installed
