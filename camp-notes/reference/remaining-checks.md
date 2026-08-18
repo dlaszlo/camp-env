@@ -230,6 +230,17 @@ spec §23 as open measurements of this feature.
   must be exactly what they were before. Nothing camp did may have touched
   the host.
 
+  **Half of this is now measured** (2026-08-18). The launchers are in the
+  workspace repository and the inventory is accepted, so the arrangement
+  exists: inside a session `ssh` and `scp` resolve to
+  `<live>/.workspace/bin/`, raw ssh reached through `$OUTER_PATH` fails
+  with *Bad owner or permissions on
+  /etc/ssh/ssh_config.d/20-systemd-ssh-proxy.conf*, and the launcher's ssh
+  answers `ssh -G <host>` with status 0 — which is the configuration
+  parsing that used to refuse. Outside, `command -v ssh` is `/usr/bin/ssh`
+  and `ssh -G` is clean. What is left needs a real peer: one connection
+  through each of the three entry points, and `git ls-remote` over ssh.
+
 - **The keyring over the namespace boundary.** Whether `libsecret` /
   `gnome-keyring` is reachable from inside a session — the socket lives in
   the user's own runtime directory, so it probably is, but nobody has run
