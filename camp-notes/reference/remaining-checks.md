@@ -261,6 +261,68 @@ finished. It is also why a binary built anywhere else cannot elevate: an
 `up` from a scratch build is refused for the password it cannot ask for,
 which is the rule doing its job.
 
+**And it is still installed.** The group that needed it is finished, and
+removing it is the one step of this file a session cannot take: `sudo rm
+/etc/sudoers.d/camp-testing` needs a password, and sudo cannot prompt
+without a terminal (C33). It waits for one command from the owner's
+terminal.
+
+### Item 7 finished: a swap for every operand, 2026-08-18
+
+The half CAMP-REVIEW-004's repair asked for -- a swap exercised
+independently for each operand -- is now measured. Two triggers were
+enough: the helper's process existing, which is after the front end has
+taken every identity and about ten milliseconds before the helper's first
+check, and a named mount point appearing in the machine's mount table.
+Every run converged afterwards: nothing mounted, no record, camp's work
+directory gone, the live directory empty, the workspace writable.
+
+- **The overlay's upper layer**, replaced with a different real
+  directory: refused -- *camp is not the object camp checked: it was
+  64513:6295166 and it is now 64513:6319724*. Replaced with a symlink:
+  refused by the resolution -- *opening the overlay's upper layer ...: a
+  component of the path is a symbolic link*.
+- **The overlay's work directory**, replaced with a different real
+  directory: refused, by identity, naming
+  `.camp/work/56a06176bd04/work`.
+- **The overlay's lower layer**: refused, but by the check that reaches
+  that path first. The workspace is also the frame's first mount -- bound
+  onto itself to hold it read-only -- so its identity is compared as that
+  mount's source before the overlay's operands are opened at all. And
+  once that mount stands, the directory cannot be swapped at all: the
+  rename fails *device or resource busy*, measured, with the composition
+  coming up normally.
+- **The live directory**, replaced with a different real directory
+  between the staging tree's last mount and the move: **accepted**. `camp
+  up` finished, eleven mounts verified, and the composition stands on the
+  directory the swap put there while the one camp validated sits beside
+  it, empty. No identity is carried for the live path, and the descriptor
+  the move goes to is opened after the swap. What the descriptor covers is
+  the interval between that open and `move_mount` -- microseconds. The
+  interval since validation is milliseconds, and it is not covered. A
+  design question for the owner, beside the other open window.
+- **The live directory, replaced with a symlink** pointing outside the
+  environment root: refused by the open, rollback complete. The step
+  before the open, the self-bind that keeps the move from propagating,
+  still resolves the live path **by name** and therefore follows the
+  symlink; a sampler reading the mount table 12,000 times a second never
+  caught the bind it makes at the symlink's target, and the rollback
+  removes it. Recorded, not repaired.
+
+**What this found.** A refusal from the helper's precheck -- before the
+first syscall that changes anything -- was reported by `camp up` as
+*camp up failed, and what it built is still on the machine*, with an
+empty list of what was still mounted and a record left in phase
+`partial`, while `camp status` a second later called all eleven mounts
+gone. Repaired in camp `5ce1fec`; the end-to-end re-measurement waits for
+an install, because the binary that elevates is the installed one.
+
+**And the baseline it began with**: a plain `camp up` and `camp down` on
+camp `8ddf464`, which measured the work-directory repair that session
+left untested -- `down` removed twelve of twelve and then *removed:
+.camp/work/56a06176bd04, camp's own work directory*, and the directory is
+empty afterwards.
+
 ### What has run, and what it found
 
 On 2026-08-16, in the session after the first one. Running them found
