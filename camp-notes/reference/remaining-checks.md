@@ -481,7 +481,16 @@ spec §23 as open measurements of this feature.
   must be exactly what they were before. Nothing camp did may have touched
   the host.
 
-  **Half of this is now measured** (2026-08-18). The launchers are in the
+  **The peer half is now measured** (2026-08-19), by the owner at a
+  terminal: all three entry points resolve to the launchers and all three
+  completed a connection to a real host, with the user's own host alias
+  and key, and no "Bad owner or permissions" from any of them; `git
+  ls-remote` over ssh answered with this repository's real refs.
+  `log/2026-08-19-ssh-from-inside-a-composition.md` has what was run and
+  what each part settles. What is left is the one line that needs no peer:
+  the same terminal after the session ends.
+
+  **The earlier half** (2026-08-18). The launchers are in the
   workspace repository and the inventory is accepted, so the arrangement
   exists: inside a session `ssh` and `scp` resolve to
   `<live>/.workspace/bin/`, raw ssh reached through `$OUTER_PATH` fails
