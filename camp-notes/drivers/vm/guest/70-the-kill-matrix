@@ -1,0 +1,8 @@
+#!/bin/bash
+# The privileged helper interrupted at each of the review's eight
+# boundaries, recovering from the record alone.
+set -eu
+cd ~/camp
+go build -tags camptest -o "$HOME/campcheck/camp-barriers" ./cmd/camp
+cd ~/drivers
+go run ./killmatrix -env "$HOME/campcheck" -camp "$HOME/campcheck/camp-barriers"

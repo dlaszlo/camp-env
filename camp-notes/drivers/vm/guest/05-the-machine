@@ -1,0 +1,14 @@
+#!/bin/bash
+# What machine this is.
+#
+# Every constraint in this project is a fact about a kernel, so a log that
+# does not say which kernel answered is a log of nothing. It is also the
+# first thing to look at when a measurement disagrees with the one before
+# it.
+set -eu
+echo "kernel:     $(uname -r)"
+echo "release:    $(. /etc/os-release && echo "$PRETTY_NAME")"
+echo "overlayfs:  $(grep -c overlay /proc/filesystems) entr(y|ies) in /proc/filesystems"
+echo "/tmp:       $(awk '$5 == "/tmp" {print $NF, $(NF-2)}' /proc/self/mountinfo | head -1) $(df -T /tmp | tail -1 | awk '{print $2}')"
+echo "/:          $(awk '$5 == "/" {print $NF}' /proc/self/mountinfo | head -1)"
+echo "userns:     $(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 'no such switch')"

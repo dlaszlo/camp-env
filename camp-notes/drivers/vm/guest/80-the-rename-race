@@ -1,0 +1,8 @@
+#!/bin/bash
+# The environment's name swapped under the helper at each of its
+# resolutions, with a root-owned trap tree at the old name.
+set -eu
+cd ~/camp
+go build -tags camptest -o "$HOME/campcheck/camp-barriers" ./cmd/camp
+cd ~/drivers
+go run ./renamerace -env "$HOME/campcheck" -camp "$HOME/campcheck/camp-barriers"

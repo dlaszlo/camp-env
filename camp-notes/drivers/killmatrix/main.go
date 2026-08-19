@@ -86,10 +86,8 @@ func run() int {
 		return 2
 	}
 
-	// The password, once, so that no later step meets a prompt in the
-	// middle of a measurement.
-	if result := probe.Run(*env, "sudo", "-v"); result.Code != 0 {
-		fmt.Fprintf(os.Stderr, "sudo would not warm up: %s%s\n", result.Out, result.Err)
+	if err := warmSudo(*env); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		return 2
 	}
 
@@ -567,4 +565,23 @@ func home() string {
 		return "."
 	}
 	return directory
+}
+
+// warmSudo makes sure the privileged steps will not stop to ask for a
+// password in the middle of a measurement.
+//
+// Two machines to satisfy. On a person's own machine sudo asks on a
+// terminal and cannot ask anywhere else -- C33 -- so the password is taken
+// once, here, before anything is measured. On a machine that exists for
+// one run there is no password and no terminal either, and asking for one
+// would fail on a machine where nothing needed asking. So: find out
+// whether anything needs asking, and only then ask.
+func warmSudo(dir string) error {
+	if probe.Run(dir, "sudo", "-n", "true").Code == 0 {
+		return nil
+	}
+	if result := probe.Run(dir, "sudo", "-v"); result.Code != 0 {
+		return fmt.Errorf("sudo would not warm up: %s%s", result.Out, result.Err)
+	}
+	return nil
 }

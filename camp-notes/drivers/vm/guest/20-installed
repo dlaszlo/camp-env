@@ -1,0 +1,18 @@
+#!/bin/bash
+# camp installed where the apparmor profile names it.
+#
+# The namespace mode is gated on an *installed* binary path: with
+# kernel.apparmor_restrict_unprivileged_userns set, any binary may create a
+# user namespace and is then confined to a profile that denies every mount,
+# and the permission is granted by profile to one path. A binary built in a
+# checkout is not that path -- which is why this cannot be measured from a
+# checkout, and why it is measured here.
+set -eu
+cd ~/camp
+
+go build -o /tmp/camp ./cmd/camp
+sudo install -m 755 /tmp/camp /usr/local/bin/camp
+sudo install -m 644 packaging/apparmor/camp /etc/apparmor.d/camp
+sudo apparmor_parser -r /etc/apparmor.d/camp
+
+echo "   installed at /usr/local/bin/camp, with its profile loaded"

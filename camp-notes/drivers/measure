@@ -89,9 +89,11 @@ main() {
     printf 'environment: %s\nrepository:  %s\nstarted:     %s\n' \
         "$env" "$repo" "$(date -Is)"
 
-    # The password once, so that no stage meets a prompt in the middle of
-    # a measurement.
-    sudo -v || return 2
+    # The password once, so that no stage meets a prompt in the middle of a
+    # measurement -- and only when there is one to give. A machine that
+    # exists for one run has no password and no terminal to type it on, and
+    # asking there would fail on a machine where nothing needed asking.
+    sudo -n true 2>/dev/null || sudo -v || return 2
 
     for stage in "${stages[@]}"; do
         if ! "stage_$stage"; then
