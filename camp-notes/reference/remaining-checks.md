@@ -18,11 +18,19 @@ that stood in front of them has run, and it decided the question -- C34
 to C36 in `constraints.md`, and the descriptor-safe teardown is written
 on C36.
 
-**Both now have an instrument.** `drivers/killmatrix` and
-`drivers/renamerace` are written and are waiting for somebody to run them
-at a terminal; `drivers/README.md` says how. Neither can run unattended,
-for the terminal reason below, and neither has been run. Those two, and
-the person-gated measurements at the end, are what is left.
+**Both have been run, and both hold.** `drivers/killmatrix` holds at all
+twelve kill boundaries and `drivers/renamerace` at all four resolutions.
+Between them they found four defects, every one of them repaired.
+
+**And neither needs a person any more.** The terminal gate below is
+answered rather than worked around: `drivers/vm` boots a machine that
+exists for the length of one run, where passwordless sudo is not a hole
+because there is nothing behind it, an install is free, and the machine
+is the only thing on the machine. `drivers/vm/guest` is the list of what
+runs there, and adding a measurement is adding a file to it.
+
+What is left is the person-gated group at the end of this file: the ssh
+and keyring measurements, which need real credentials and a real peer.
 
 That first real run earned its keep immediately: two source guards had
 been walking the module's directory tree, which inside a composition also

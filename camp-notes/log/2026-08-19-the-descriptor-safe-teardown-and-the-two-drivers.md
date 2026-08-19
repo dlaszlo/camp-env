@@ -315,18 +315,60 @@ path at all: `statx(fd, STATX_MNT_ID)` names the mount a descriptor holds,
 and the table can then be read by id. That is Linux 5.8 and nobody here
 has measured it.
 
+## Both findings repaired, and then the machine
+
+The two decisions above were taken: the teardown refuses when the base's
+current path is not the one the job names — one `readlink` on the
+descriptor it already holds — and a different filesystem at a recorded
+path is now the end of the operand comparison rather than the first line
+of it. With those in, the rename race holds at all four resolutions and
+the kill matrix at all twelve boundaries.
+
+Then the question that mattered more than either: **how does any of this
+run without a person?** Three things needed one — sudo's password, which
+cannot be typed without a terminal; the apparmor gate, which grants the
+namespace to one installed binary path and so needs an install; and the
+privileged mode being machine-wide, so it cannot run beside anybody's
+work. A machine that exists for the length of one run answers all three
+at once, and this machine can boot one: `drivers/vm` is plain user-space
+qemu with KVM, a cloud image and a seed, no libvirt and no root on the
+host.
+
+It earned its keep within the hour. Four defects, none of which could
+have been found here:
+
+- **camp refused to run for a user who had never had `~/.local`.** A
+  fresh account has no state directory, and camp's records are the first
+  thing that would live in it. The specification says whoever needs the
+  directory makes it; camp now does.
+- **The identity spike wrote its own read-only remount**, without the
+  source mount's locked flags — the call this repository keeps under the
+  name `RemountReadOnlyWithoutLockedFlags` because it is the deliberately
+  wrong one. `/tmp` is `nosuid,nodev` on most machines, so the island
+  stayed writable and the test reported camp as letting a write reach the
+  workspace. It had never shown because the test only runs where a binary
+  may create a namespace, and the one arrangement where that was true put
+  the test tree on ext4.
+- **The image has to be the current release.** Two releases back the
+  composed tree's lower layer was refused outright, and a run there would
+  have reported camp broken.
+- **overlay is a module a cloud image has never used**, so it is not
+  loaded, `/proc/filesystems` lists it nowhere and camp refuses — which
+  is right, because a user namespace cannot load a module. The package
+  now asks for it at boot.
+
+That last one is part of the other piece of work: camp builds its own
+Debian package, so putting it on a machine is one command that also
+places the apparmor profile with the right path in it. The machine
+installs camp that way rather than by copying a binary, which is the only
+way the profile's path, the module and the maintainer scripts get
+measured at all.
+
 ## What is left
 
-Two things, and both are decisions rather than work:
-
-1. Whether to make the teardown refuse when the base's current path is
-   not the one the job names. Until it does, a rename during `camp down`
-   loses the record while camp's mounts stand.
-2. Whether to repair `camp status` reading camp's own self-bind as the
-   composed tree, written up above.
-
-The measurements themselves are done and both drivers are green on
-everything they were built to assert.
+The person-gated group: ssh and the keyring, which need real credentials
+and a real peer. Everything else runs on its own — `drivers/vm/guest` is
+the list, and adding a measurement is adding a file to it.
 
 Then two things follow from whatever they say. If the kill matrix holds,
 finding 3's acceptance criteria are met by measurement rather than by

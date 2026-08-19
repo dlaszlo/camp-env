@@ -91,28 +91,30 @@ review record and the build order.
 
 ## Where this stands
 
-The tool is built and working. Ten commits, a fresh history with nothing
-internal in it, tests green, and camp composes its own development
-environment — which is what this repository is part of.
+The tool is built, and what was open about it is now measured. Both
+review findings that were still open are repaired; the kill matrix holds
+at all twelve boundaries and the rename race at all four resolutions; the
+suite is green in both builds, on ext4 and on tmpfs, from a checkout and
+from inside a composition. camp installs from a package it builds itself.
 
-**The design document has not been brought up to date with what was
-built.** It still reads as a plan: build-order stages that are finished,
-deferred items that are done, decisions recorded with the date they were
-taken, and a section about migrating one specific pair of repositories
-that has nothing to do with camp. None of that is wrong exactly, but all
-of it would mislead somebody — a person or a model — reading it as a
-description of the tool that exists.
+**None of that needs a person any more.** `drivers/vm` boots a machine
+that exists for one run and runs everything on it — the two builds, the
+install, a composition, both drivers, the namespace group nested and not.
+Adding a measurement is adding a file to `drivers/vm/guest`. That is what
+made the last four defects findable: three of them only appear on a
+machine nobody has used, or on a filesystem the suite had never run on.
 
-That is the next job, and it is the one that matters most for this
-repository: **design and proven measurements, nothing else.** Specifically:
+**What is left in this repository is `spec.md`.** It still reads as a
+plan in places: build-order stages that are finished, a migration of one
+specific pair of repositories that has nothing to do with camp, and
+decisions recorded with the date they were taken. The parts that had gone
+*wrong* rather than merely stale are corrected — what a teardown does,
+and the register of measurements in §23 — but the restructuring is not
+done, and it is still the job that matters most here:
 
-- rewrite `spec.md` as a description of what camp *is*, in the present
-  tense, with the reasoning kept and the process removed — no build
-  order, no dated decisions, no migration of anything;
-- fold the corrections the build measured into it, so it stops disagreeing
-  with the code (the capability set an overlay mount needs, the locked
-  flags, the shape of the namespace restriction);
-- keep every "why", because that is the half a reader cannot recover from
-  the code;
-- check `constraints.md` the same way — it is mostly measurement and
-  should survive nearly intact.
+- rewrite it as a description of what camp *is*, in the present tense,
+  with the reasoning kept and the process removed;
+- keep every "why", because that is the half a reader cannot recover
+  from the code;
+- `constraints.md` needs none of this — it is measurement, and it has
+  grown rather than gone stale.

@@ -1168,6 +1168,32 @@ source already had, restored here) — and check each recorded mount
 against mountinfo by path and identity. `down` unmounts whatever of
 the recorded plan is still present, in reverse recorded order; drift
 between the record and the current config is reported separately.
+
+**How each one is removed.** `umount2` takes a path and the kernel
+resolves it, and the invoking user owns every directory above that
+path -- so the helper does not name a mount by the path the record
+carries. It resolves the target beneath the base descriptor it pinned,
+checks the identity on that descriptor, takes a handle on the mount
+with `open_tree`, moves that handle into a directory under `/run` that
+root makes for the purpose, and unmounts it there, at a path no part of
+which anybody else can rename. A mount that will not come down is moved
+back where it stood and reported busy, so the record and the next
+`down` keep meaning what they meant.
+
+Two mounts cannot go that way: the kernel refuses to move a mount whose
+parent is shared, and the staging and live self-binds sit on `/`, which
+is. Those are unmounted through their parent directory's own
+descriptor -- `umount2` on `/proc/self/fd/<the directory>/<one name>`,
+which resolves the directory from the descriptor rather than by walking
+its name, and C34 says the name below it cannot be renamed while
+something is mounted on it.
+
+And a teardown whose environment root has moved since the record was
+written stops with nothing unmounted. The mount table answers about the
+path a mount is at *now*, so after a rename every recorded path answers
+"nothing is mounted there" -- true about a name, false about the
+machine. The base is a descriptor and knows where it is.
+
 The acceptance for all of this is a kill-point matrix (§22): a kill
 injected at every mount, record-write, move and unmount boundary,
 after which `status` and `down` must converge from the record alone,
@@ -2100,7 +2126,34 @@ Nothing from that review remains unanswered in this file.
 **Named build-blocking measurements** — the register the review asked
 §23 to be. Each carries its expected outcome; an item leaves this
 list only when its mechanism *and* acceptance test are both written,
-and each already appears in §22's stages:
+and each already appears in §22's stages.
+
+**All six have since been run.** They run unattended now, on a machine
+that exists for the length of one run — `drivers/vm` in this repository
+boots it, and `drivers/vm/guest` is the list of what it runs. The
+outcomes:
+
+- The full privileged lifecycle: **holds**, first by hand on
+  2026-08-19 and since on every run of the machine.
+- Kill-point recovery: **holds at all twelve boundaries** —
+  `drivers/killmatrix`, which expands the review's eight to one case
+  per nested mount.
+- The rename/symlink race: **holds at all four resolutions** —
+  `drivers/renamerace`. It found two real defects on its first runs:
+  root unmounting a mount in the trap tree by a recorded name, and a
+  teardown reporting itself finished after the environment was renamed
+  under it. Both are repaired above.
+- The repeated session and the supervisor traces: **hold**, in the
+  suite the machine runs from inside a composition.
+- Locked flags: **holds on ext4 and on tmpfs both**, which is the pair
+  that matters — `/tmp` is `nosuid,nodev` and a suite that only ran on
+  one filesystem had measured one of them. Running both found the
+  identity spike replicating no flags at all.
+- Identity route A: **holds**, in a namespace of its own and inside one
+  camp opened.
+
+The list below is what each was for, kept because it says what an
+acceptance actually required:
 
 - **The full privileged lifecycle, end to end** (not only `trusted.*`
   xattrs): staging invisibility until the move, machine-wide
