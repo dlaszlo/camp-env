@@ -4,9 +4,19 @@
 installed at `/usr/local/bin/camp` with its profile, and the whole suite
 was run through it — `camp run -- go test ./internal/... -count=1`, which
 opens the namespace with the installed binary and lets the test binary
-create its own inside. Every package passed and **nothing skipped**. What
-is still waiting is the terminal group and the two person-gated
-measurements at the end.
+create its own inside. Every package passed and **nothing skipped**.
+
+**The privileged lifecycle is no longer waiting either.** On 2026-08-19,
+after the branch that answered the twelve-finding review changed how
+every bind is made, `camp up` and `camp down` were run once by hand on a
+scratch composition and both completed —
+`log/2026-08-19-the-privileged-mode-on-the-new-mount-path.md` has the
+mount table, the record and the teardown. What is still waiting is the
+part of the terminal group that is about failure rather than about
+working: the kill matrix, the rename-race barriers, and one small
+experiment that decides whether the descriptor-safe unmount can be
+written at all. Those three, and the person-gated measurements at the
+end, are what is left.
 
 That first real run earned its keep immediately: two source guards had
 been walking the module's directory tree, which inside a composition also
@@ -134,6 +144,31 @@ and check, from a **second terminal**:
    descriptor-relative resolution must refuse it with "is not the object
    camp checked". Constructing this by hand needs a slow filesystem or a
    debugger breakpoint; the code path is `privileged.checkIdentity`.
+
+### Run again on the descriptor mount path, 2026-08-19
+
+And once more, because every bind changed again: the privileged mode now
+takes a detached copy of the source with `open_tree`, attaches it to the
+checked target descriptor with `move_mount`, and addresses the mount it
+made rather than the name it landed on. `camp up` and `camp down` both
+completed on a scratch composition of five mounts, built from
+`fix/review-8ddf464` at `f2ca05a`.
+
+What the kernel's own table said, and what each part of it settles, is in
+`log/2026-08-19-the-privileged-mode-on-the-new-mount-path.md`: the
+composed tree records the real paths and not `/proc/self/fd/N`; the
+read-only remount and the propagation change made through the clone's
+descriptor both take; the clone is the one mount `MS_BIND` would have
+made and is not recursive; and the composed tree's parent is the live
+self-bind. The teardown was run with the configuration moved aside while
+the composition was up, and worked from the record alone: no mount left,
+the work directory removed, the record discarded, both repositories at
+their original `HEAD` with nothing modified.
+
+Of the numbered checks above, this run covers 1, 2 and 3, and confirms
+that a teardown needs no configuration. **6 and 7 are not covered**: the
+successful path is what was measured, and those two are about the
+interrupted and the adversarial one.
 
 ### Run again on the new mount path, 2026-08-18
 
