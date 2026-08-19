@@ -25,8 +25,8 @@ experiment:
 2. **The rename race.** Swap the environment's name under the helper at
    each resolution, and require that nothing outside the original base
    inode changes.
-3. **The `umount2` experiment**, which decides whether the last open
-   residual of finding 1 can be repaired at all.
+3. ~~The `umount2` experiment~~ — **done, and it says yes, by another
+   route.** See below; it turned into a third piece of work.
 
 ## What is already built
 
@@ -90,23 +90,33 @@ The one barrier the review asked for that has no subject any more is
 "after a bind is attached and before the reopen". There is no reopen: the
 mount is held by the descriptor that made it.
 
-### The `umount2` probe
+### The `umount2` probe — run, and what it found
 
-`~/campcheck/umountprobe/` — source and a built binary. It answers
-whether `umount2` on a descriptor's own `/proc/self/fd` name acts on the
-mount that descriptor holds, including after the path has been renamed
-and a trap left at its name, with a control for a descriptor opened
-*before* the mount. It refuses to run outside a private mount namespace,
-because it mounts things:
+`~/campcheck/umountprobe/` — source and a built binary, run as
 
 ```
 sudo unshare -m --propagation private ~/campcheck/umountprobe/umountprobe
 ```
 
-If both answers come back right, the teardown's `umount2`-by-path and
-`Detach`'s cleanup unmount can both be closed, and finding 1 has no
-residual left. If not, the residual stays and the comment already in the
-source is the honest state.
+Four questions, and the answers are in `reference/constraints.md` as
+C34–C36. In short:
+
+- **A mount point cannot be renamed** (`EBUSY`), so the rename race can
+  only be played at an ancestor. C34.
+- **`umount2` on a descriptor's own `/proc/self/fd` name cannot be the
+  answer**, for two opposite reasons: a descriptor on the mount pins it
+  and the call gets `EBUSY`; a descriptor on the mount point is *resolved
+  through* into the mount, so the path decided and not the descriptor.
+  C35.
+- **But a mount can be moved by descriptor and unmounted where it
+  lands**: `open_tree` then `move_mount` into a directory named by
+  another descriptor moves the same mount id, leaves the original path
+  clear, and `umount2` there removes it once nothing pins it. C36.
+
+So the residual of finding 1 **is** repairable, by the route the review
+itself suggested — identify by descriptor, move to a place only root can
+name, unmount it there. That is a third piece of work and it is the one
+with the most value in it: it closes the last open criterion of a P0.
 
 ### The scratch composition
 
@@ -117,7 +127,30 @@ here and the privileged mode asks for `nouserxattr`, which is the
 
 ## What the next session builds
 
-Two drivers. Neither can be run by an assistant — both need sudo on a
+Three things. The first is a code change and the other two are drivers.
+
+### The descriptor-safe teardown
+
+C36 is measured, so the teardown's `umount2`-by-path and `Detach`'s
+cleanup unmount can both stop handing the kernel a name it resolves
+again. The shape: resolve the target beneath the pinned root, check its
+identity on that descriptor as the teardown already does, then
+`open_tree` it, `move_mount` it into a root-owned directory camp makes
+for the purpose, and `umount2` it there.
+
+What has to be decided along the way, and is not decided here: where the
+graveyard lives (it must be a directory the invoking user cannot rename,
+which rules out anywhere under the environment root), what happens when
+the move succeeds and the unmount does not, and whether a mount that
+cannot be moved should fall back to the unmount by name or be reported
+stranded. The comments at `helper.go`'s teardown and at `mountx.Detach`
+say what is open today; they are what this replaces.
+
+Nothing here can be run by an assistant: it mounts. It lands the same way
+the descriptor binds did — written against a measured primitive, and
+proved by the next real `camp up`.
+
+### Two drivers Neither can be run by an assistant — both need sudo on a
 real terminal — so they are written to be handed over and run by the
 owner, and they must print a verdict rather than a log to read.
 

@@ -182,6 +182,36 @@ comparison of file names must sort by bytes.
 subprocess with no stdin gets no password prompt; the command simply
 fails.
 
+**C34. A mount point cannot be renamed.** *(measured, kernel 7.0.0-29)*
+`rename(2)` answers `EBUSY` for a directory that has something mounted on
+it. So a name camp mounted on is pinned for as long as the mount stands,
+and the swap the review's rename race is about can only be made at an
+*ancestor* of a mount point, never at the mount point itself. That
+narrows what has to be defended and it is the reason the barrier for that
+race is placed at the resolutions rather than at the mounts.
+
+**C35. `umount2` on a descriptor's own `/proc/self/fd` name cannot be a
+descriptor-safe unmount, for two opposite reasons.** *(measured, kernel
+7.0.0-29)* A descriptor opened on the mount *after* it exists holds a
+reference to that mount, and the reference is what makes it busy:
+`umount2` answers `EBUSY`, and still does after an ancestor has been
+renamed. A descriptor opened on the mount point *before* the mount does
+unmount it — but only because resolving the `/proc/self/fd` name crosses
+into the mount, so the answer came from path traversal and not from the
+descriptor. Holding a descriptor therefore buys nothing here: the first
+case cannot act and the second does not obey.
+
+**C36. A mount can be moved by descriptor and unmounted where it lands.**
+*(measured, kernel 7.0.0-29)* `open_tree(path, 0)` gives a handle on the
+mount at a path; `move_mount` with `MOVE_MOUNT_F_EMPTY_PATH` moves *that*
+mount — the same mount id arrives — into a directory named by another
+descriptor, leaving the original path clear; and once no descriptor pins
+it, `umount2` at the new path removes it. This is what makes a
+descriptor-safe teardown possible after C35 rules out the obvious route:
+the *choice* of what to remove is made on a descriptor, so a name swapped
+after the identity check cannot redirect it, and the unmount itself
+happens at a path only root can name.
+
 ---
 
 ## Where these came from
