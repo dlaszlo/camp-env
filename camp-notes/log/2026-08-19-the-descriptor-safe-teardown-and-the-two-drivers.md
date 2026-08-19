@@ -5,9 +5,15 @@ Date: 2026-08-19, following
 on `fix/review-8ddf464`; this session added one commit to it. The notes
 repository gained the drivers and this entry.
 
-Three things were asked for and three were built. **None of them has been
-run.** The code change mounts, and both drivers need sudo at a terminal;
-what is written here is what was decided and why, not what was measured.
+Three things were asked for and three were built. The teardown and the
+kill matrix have since **been run by the owner at a terminal**, and the
+last two sections say what that found; the rename race has not been run
+yet. Everything before those sections is what was decided and why, which
+is what a reader needs whether or not the measurement agreed.
+
+The teardown's first real run found a defect in it immediately, and the
+kill matrix found one in `camp status` and two in its own driver. All of
+that is below.
 
 ## 1. The descriptor-safe teardown
 
@@ -189,9 +195,31 @@ and the teardown named what it could not remove.
 The five-step staircase worked: killing at the *n*th nested mount by
 waiting at the *n-1* before it reached all five.
 
+## The teardown's first real run
+
+It failed, on the first `camp up`, and the failure was in the new code:
+the descriptor the identity check had been made on was still open across
+the unmount. A descriptor on a mount is a reference to it and `umount2`
+answers `EBUSY` while one is held — which is C35, measured, as the reason
+the obvious repair cannot work, and it is the same reference whoever
+holds it. `Remove` closed its own handles and left the caller's alone, so
+every mount camp tried to remove came back busy, including the
+composition it had just built.
+
+`Remove` now takes the mount by pointer, closes that descriptor as soon
+as it has asked it everything it is for — which mount this is, and a
+handle carrying that decision — and leaves `-1` behind. The caller cannot
+be left to close it afterwards: by then the number may belong to
+something else the process opened.
+
+Worth keeping for the shape of it: the constraint that broke it was
+written down, measured, and quoted in the comment three lines above the
+code that violated it.
+
 ## What is left
 
-Run them. `drivers/README.md` has the two command lines.
+The rename race. `drivers/README.md` has the command line, or
+`./measure renamerace`.
 
 Then two things follow from whatever they say. If the kill matrix holds,
 finding 3's acceptance criteria are met by measurement rather than by
