@@ -12,6 +12,26 @@ Neither can be run unattended. Both need sudo on a real terminal — sudo
 asks for a password there and cannot ask anywhere else, which is C33 —
 and both make and remove real mounts on the machine they run on.
 
+## One command for all of it
+
+```
+./measure
+```
+
+Builds both binaries, does one ordinary `camp up` and `camp down` to show
+the mount paths work at all, then runs both drivers — stopping at the
+first stage that fails, because a stage measuring what the one before it
+left measures nothing. Everything it printed is also in `measure.log`, so
+somebody who was not at the terminal can read it afterwards.
+
+A single stage on its own: `./measure build`, `./measure run`,
+`./measure killmatrix`, `./measure renamerace`. It takes the environment
+from `CAMP_ENV` and the camp repository from `CAMP_REPO` if the defaults
+(`~/campcheck` and the sibling checkout) are not where they are.
+
+The rest of this file is what the two drivers do and how to run them by
+hand.
+
 ## Building the camp they drive
 
 Both need a camp with the barrier protocol compiled in. That build is not
