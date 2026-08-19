@@ -216,10 +216,53 @@ Worth keeping for the shape of it: the constraint that broke it was
 written down, measured, and quoted in the comment three lines above the
 code that violated it.
 
+## What the rename race found on its first run
+
+It stopped at the first swap, `base-owned`, and what it caught is the
+reason the whole measurement exists: **root unmounted a mount that was
+nothing to do with camp.**
+
+```
+a mount outside /home/dlaszlo/campcheck disappeared while the name was swapped:
+  11651 33 252:1 /var/tmp/camp-trap/marker-staging
+        /var/tmp/camp-trap/.camp/work/a1478934bd08/staging ro,relatime shared:1 - ext4 ...
+```
+
+The sequence: the barrier stopped the helper with its base open and
+checked, the driver renamed the environment away and left a link to the
+trap tree at its name, the run went on and failed, and the rollback
+removed camp's staging self-bind. A self-bind cannot be moved — its
+parent is the mount `/` is, which is shared — so it had no graveyard
+route and came down by the name the record had written down. The kernel
+resolved that name through the link, and the trap's own mount at the same
+relative path is what went.
+
+This session had written that residual down twice and called it bounded,
+on the grounds that those names sit inside camp's own work directory. The
+measurement corrected the argument in one run: **the environment root
+itself is the thing being swapped**, so a name inside it reaches wherever
+the link points. A bound that assumes the attacker leaves the top of the
+path alone is not a bound.
+
+The repair is the primitive `remaining-checks.md` had listed as waiting.
+`umount2` takes a path and nothing else, so the way to give it a mount by
+descriptor is the parent directory's own `/proc/self/fd` name with the
+one component appended: the kernel resolves the magic link to the
+directory the descriptor holds, then walks one component from there. C34
+says that component cannot be renamed while something is mounted on it.
+The descriptor comes from the same walk the identity check was made on.
+
+The addressing half is now **C37**, measured unprivileged and with no
+mount: a directory renamed away with a link to another tree left at its
+name does not redirect its own descriptor's `/proc` name. The half that
+is only end-to-end — that the call acts on the mount standing there and
+on nothing else — is what the rename race measures whenever it runs.
+
 ## What is left
 
-The rename race. `drivers/README.md` has the command line, or
-`./measure renamerace`.
+Run the rename race again, past `base-owned`: `./measure renamerace`.
+Three swaps after it have never been reached, and the kill matrix should
+be re-run too, because the teardown changed underneath it.
 
 Then two things follow from whatever they say. If the kill matrix holds,
 finding 3's acceptance criteria are met by measurement rather than by

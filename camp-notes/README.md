@@ -15,7 +15,7 @@ written *while* the work happens.
 ```
 reference/     what is true now — look it up, no dates
 ├── spec.md               the design the implementation was built from
-├── constraints.md        what the kernel, git and the instruments do (C1–C36)
+├── constraints.md        what the kernel, git and the instruments do (C1–C37)
 └── remaining-checks.md   what still needs an install, sudo, or a person
 
 log/           what happened, in order — dated, never edited afterwards

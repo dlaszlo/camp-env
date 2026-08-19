@@ -433,27 +433,19 @@ either bind-mounted or shadowed by the code repository, so measuring it
 means putting a file in the workspace repository for the purpose, or
 doing it in a throwaway machine.
 
-## The one primitive the teardown is still waiting on
+## The primitive the teardown was waiting on -- answered
 
-`umount2("/proc/self/fd/<a directory descriptor>/<one name>", 0)`.
+`umount2("/proc/self/fd/<a directory descriptor>/<one name>", 0)` is
+written and is what camp does now, for the two mounts C36's route cannot
+help. The rename race is what said it had to be: on its first run, with
+the environment's name swapped for a link, root unmounted a mount in the
+trap tree because the rollback removed camp's self-bind by the recorded
+name.
 
-What it would settle: camp's two self-binds cannot be moved -- the kernel
-refuses to move a mount whose parent is shared, and their parent is the
-mount `/` is, which is shared on a systemd machine -- so they are the only
-mounts the descriptor-safe teardown cannot take to the graveyard, and they
-still come down by a name the kernel resolves again. This form would close
-that: the parent is named by a descriptor and cannot be redirected by any
-rename above it, and C34 says the one component below it cannot be renamed
-while something is mounted on it.
-
-Why it is not written: nobody has run it. The magic link is resolved to
-the object the descriptor holds and the rest of the path is walked from
-there -- that is the documented behaviour and it is not a measurement. C35
-is the reason to be careful about assuming: the obvious form of the same
-idea fails, in two opposite ways, and only running it showed that.
-
-It needs a private mount namespace and root, like the probe that produced
-C34 to C36: `~/campcheck/umountprobe/main.go` is the shape to copy.
+The addressing half is C37, measured unprivileged and with no mount at
+all. The half that is still only end-to-end -- that the call acts on the
+mount standing at what it reached, and on nothing else -- is what the
+rename race measures every time it runs.
 
 ## Person-gated: the session environment against the real world
 

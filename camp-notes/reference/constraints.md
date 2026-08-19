@@ -212,6 +212,27 @@ the *choice* of what to remove is made on a descriptor, so a name swapped
 after the identity check cannot redirect it, and the unmount itself
 happens at a path only root can name.
 
+**C37. A descriptor's own `/proc/self/fd` name plus one component is not
+redirected by renaming the directory it was opened by.** *(measured,
+kernel 7.0.0-29)* The kernel resolves the magic link to the directory the
+descriptor holds -- not by walking the name it was opened under -- and
+then walks the appended component from there. Measured by renaming the
+directory away and leaving a symbolic link to another tree at its name:
+the compound path still reaches the original child, while the same path
+without the descriptor reaches the decoy.
+
+This is what lets `umount2`, which takes a path and nothing else, be
+given a mount by descriptor after all. Together with C34 -- a mount point
+cannot be renamed while it is mounted -- it means neither the directory
+above nor the name below can be swapped between the check and the call.
+It is how camp removes the two mounts C36's route cannot help: a mount
+whose parent is shared cannot be moved anywhere, and camp's two
+self-binds sit on `/`, which is shared.
+
+What is measured here is the addressing. That the call then acts on the
+mount standing at what it reached is the other half, and it is measured
+end to end by the rename race rather than in isolation.
+
 ---
 
 ## Where these came from
