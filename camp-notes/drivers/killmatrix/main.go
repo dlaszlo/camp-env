@@ -329,12 +329,33 @@ func (f *fixture) measure(one *probe.Case, at boundary) {
 		"the record's phase is %q, and a run killed at %s left a machine that "+
 			"may be holding %s", record.Phase, at.name, at.holding)
 
+	// "Describes the composition" is not a phrase to search for. What it
+	// means is that a person with no configuration can see, from this
+	// output alone, which composition this is and what of it is standing --
+	// so that is what is required: the tree's own path, the record's name,
+	// and every mount that is actually on the machine, at the place it is
+	// actually at. camp wraps its lines at spaces and never inside a path,
+	// so a path either appears whole or does not appear.
 	status := probe.Run(f.env, f.camp, "status")
-	one.Require(strings.Contains(status.Out+status.Err, f.live),
-		"'camp status' with no configuration does not name %s:\n%s%s",
-		f.live, status.Out, status.Err)
-	one.Require(!status.Says("no record"),
-		"'camp status' with no configuration says there is no record")
+	said := status.Out + status.Err
+	one.Require(status.Code == 0,
+		"'camp status' with no configuration exited %d:\n%s", status.Code, said)
+	one.Require(strings.Contains(said, f.live),
+		"'camp status' with no configuration does not name %s:\n%s", f.live, said)
+	one.Require(strings.Contains(said, record.Hash),
+		"'camp status' with no configuration does not name the record %s:\n%s",
+		record.Hash, said)
+
+	standing, err := probe.Table()
+	if err != nil {
+		one.Stop("the mount table could not be read: %v", err)
+		return
+	}
+	for _, mount := range probe.Under(standing, f.env) {
+		one.Require(strings.Contains(said, mount.Point),
+			"%s is mounted and 'camp status' with no configuration does not "+
+				"name it:\n%s", mount.Point, said)
+	}
 
 	f.recover(one, before, was)
 }
