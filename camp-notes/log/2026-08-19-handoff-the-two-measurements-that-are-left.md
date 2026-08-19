@@ -1,4 +1,4 @@
-# Handoff: the two measurements that are left, and what is already built for them
+# Handoff: what is left, and what is already built for it
 
 Date: 2026-08-19. Written for whoever picks this up next, including a
 later session of the same work. camp is on `fix/review-8ddf464`, head
@@ -150,9 +150,11 @@ Nothing here can be run by an assistant: it mounts. It lands the same way
 the descriptor binds did — written against a measured primitive, and
 proved by the next real `camp up`.
 
-### Two drivers Neither can be run by an assistant — both need sudo on a
-real terminal — so they are written to be handed over and run by the
-owner, and they must print a verdict rather than a log to read.
+### Two drivers
+
+Neither can be run by an assistant — both need sudo on a real terminal —
+so they are written to be handed over and run by the owner, and they must
+print a verdict rather than a log to read.
 
 **The kill-matrix driver.** For each of the eight boundaries: build the
 scratch composition, arm the barrier with `kill`, run `camp up`, then
