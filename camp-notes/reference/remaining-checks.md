@@ -13,10 +13,16 @@ scratch composition and both completed —
 `log/2026-08-19-the-privileged-mode-on-the-new-mount-path.md` has the
 mount table, the record and the teardown. What is still waiting is the
 part of the terminal group that is about failure rather than about
-working: the kill matrix, the rename-race barriers, and one small
-experiment that decides whether the descriptor-safe unmount can be
-written at all. Those three, and the person-gated measurements at the
-end, are what is left.
+working: **the kill matrix and the rename race**. The small experiment
+that stood in front of them has run, and it decided the question -- C34
+to C36 in `constraints.md`, and the descriptor-safe teardown is written
+on C36.
+
+**Both now have an instrument.** `drivers/killmatrix` and
+`drivers/renamerace` are written and are waiting for somebody to run them
+at a terminal; `drivers/README.md` says how. Neither can run unattended,
+for the terminal reason below, and neither has been run. Those two, and
+the person-gated measurements at the end, are what is left.
 
 That first real run earned its keep immediately: two source guards had
 been walking the module's directory tree, which inside a composition also
@@ -426,6 +432,28 @@ copy-up candidate in this environment: every workspace root entry is
 either bind-mounted or shadowed by the code repository, so measuring it
 means putting a file in the workspace repository for the purpose, or
 doing it in a throwaway machine.
+
+## The one primitive the teardown is still waiting on
+
+`umount2("/proc/self/fd/<a directory descriptor>/<one name>", 0)`.
+
+What it would settle: camp's two self-binds cannot be moved -- the kernel
+refuses to move a mount whose parent is shared, and their parent is the
+mount `/` is, which is shared on a systemd machine -- so they are the only
+mounts the descriptor-safe teardown cannot take to the graveyard, and they
+still come down by a name the kernel resolves again. This form would close
+that: the parent is named by a descriptor and cannot be redirected by any
+rename above it, and C34 says the one component below it cannot be renamed
+while something is mounted on it.
+
+Why it is not written: nobody has run it. The magic link is resolved to
+the object the descriptor holds and the rest of the path is walked from
+there -- that is the documented behaviour and it is not a measurement. C35
+is the reason to be careful about assuming: the obvious form of the same
+idea fails, in two opposite ways, and only running it showed that.
+
+It needs a private mount namespace and root, like the probe that produced
+C34 to C36: `~/campcheck/umountprobe/main.go` is the shape to copy.
 
 ## Person-gated: the session environment against the real world
 
