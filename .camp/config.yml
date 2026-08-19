@@ -74,3 +74,18 @@ session:
     # launchers read it to find the real programs, so that none of them has
     # to name a directory a distribution happens to use.
     OUTER_PATH: "$PATH"
+
+    # A mark in the prompt, so that a terminal standing in the composition
+    # looks like one. Here rather than in a shell startup file on the
+    # machine, for the reason this whole section exists: camp changes
+    # nothing outside a session, and a line on the machine that switches on
+    # whether camp is running is the machine behaving differently because
+    # of camp.
+    #
+    # PROMPT_COMMAND and not PS1: an interactive bash assigns PS1 in its
+    # rc, so one arriving in the environment is overwritten before the
+    # first prompt. This is imported as a variable and run before each
+    # prompt instead. $$ is one literal dollar -- camp must not expand
+    # ${PS1}, bash must -- and the pattern removal is what stops it
+    # prefixing a prompt it has already prefixed.
+    PROMPT_COMMAND: 'PS1="(camp) $${PS1#(camp) }"'
