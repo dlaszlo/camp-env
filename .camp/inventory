@@ -15,10 +15,12 @@ lower	file	.gitignore
 lower	file	CLAUDE.md
 lower	file	ENVIRONMENT.md
 upper	directory	.git
+upper	directory	.github
 upper	directory	cmd
 upper	directory	docs
 upper	directory	examples
 upper	directory	internal
+upper	directory	measure
 upper	directory	packaging
 upper	file	.gitignore
 upper	file	LICENSE
