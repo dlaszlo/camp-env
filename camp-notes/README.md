@@ -10,12 +10,12 @@ read and edited from inside a session. The workspace repository is
 read-only in there on purpose; this one is not, because the design is
 written *while* the work happens.
 
-## The two kinds of thing in here
+## The three kinds of thing in here
 
 ```
 reference/     what is true now — look it up, no dates
 ├── spec.md               the design the implementation was built from
-├── constraints.md        what the kernel, git and the instruments do (C1–C34)
+├── constraints.md        what the kernel, git and the instruments do (C1–C36)
 └── remaining-checks.md   what still needs an install, sudo, or a person
 
 log/           what happened, in order — dated, never edited afterwards
@@ -24,14 +24,25 @@ log/           what happened, in order — dated, never edited afterwards
 ├── 2026-08-16-session-handoff-state-of-the-work.md
 ├── 2026-08-16-design-session-environment.md
 └── 2026-08-16-review-and-final-plan-session-environment.md
+
+drivers/       the instruments — programs, run by a person at a terminal
+├── killmatrix/           kill the helper at each boundary, recover from the record
+└── renamerace/           swap the environment's name under root at each resolution
 ```
 
-The split is the ordering rule, and it is worth keeping. A reference
-document answers "what is true"; a date in its name would say *stale* the
-moment it is not. A log entry answers "what did we know when", and the
-date belongs in the name. What neither can carry is which document
-followed from which — a filename encodes one dimension and that is a
-graph, so it lives here in this index instead.
+The split between the first two is the ordering rule, and it is worth
+keeping. A reference document answers "what is true"; a date in its name
+would say *stale* the moment it is not. A log entry answers "what did we
+know when", and the date belongs in the name. What neither can carry is
+which document followed from which — a filename encodes one dimension and
+that is a graph, so it lives here in this index instead.
+
+The third is code rather than prose, and it is here rather than in the
+tool because it measures the tool from outside: the drivers read the
+kernel's mount table and the trees on disk themselves and share no line
+with camp, because a driver using camp's own parsing would agree with
+camp by construction. `drivers/README.md` says how to build the camp they
+need and how to run them.
 
 ## What each is
 
