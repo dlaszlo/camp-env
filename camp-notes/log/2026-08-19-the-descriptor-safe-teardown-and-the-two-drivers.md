@@ -96,7 +96,7 @@ Two smaller consequences, both deliberate:
 
 ## 2 and 3. The two drivers
 
-`drivers/killmatrix` and `drivers/renamerace`, with `drivers/README.md`
+`camp/measure/killmatrix` and `camp/measure/renamerace`, with `camp/measure/README.md`
 saying how to build the barrier camp and how to run them. They are in this
 repository and not in camp because they measure it from outside: they read
 the kernel's mount table and the trees on disk themselves and share no
@@ -330,7 +330,7 @@ cannot be typed without a terminal; the apparmor gate, which grants the
 namespace to one installed binary path and so needs an install; and the
 privileged mode being machine-wide, so it cannot run beside anybody's
 work. A machine that exists for the length of one run answers all three
-at once, and this machine can boot one: `drivers/vm` is plain user-space
+at once, and this machine can boot one: `camp/measure/vm` is plain user-space
 qemu with KVM, a cloud image and a seed, no libvirt and no root on the
 host.
 
@@ -349,9 +349,12 @@ have been found here:
   workspace. It had never shown because the test only runs where a binary
   may create a namespace, and the one arrangement where that was true put
   the test tree on ext4.
-- **The image has to be the current release.** Two releases back the
-  composed tree's lower layer was refused outright, and a run there would
-  have reported camp broken.
+- **overlay has to be loaded before anything is measured** — see below.
+  This was first written up as "the image has to be the current release",
+  because the older image failed the overlay probe. That machine also had
+  no overlay module loaded, the two were never separated, and the claim
+  about the release is withdrawn: it was not measured. What was measured
+  is the module.
 - **overlay is a module a cloud image has never used**, so it is not
   loaded, `/proc/filesystems` lists it nowhere and camp refuses — which
   is right, because a user namespace cannot load a module. The package
@@ -367,7 +370,7 @@ measured at all.
 ## What is left
 
 The person-gated group: ssh and the keyring, which need real credentials
-and a real peer. Everything else runs on its own — `drivers/vm/guest` is
+and a real peer. Everything else runs on its own — `camp/measure/vm/guest` is
 the list, and adding a measurement is adding a file to it.
 
 Then two things follow from whatever they say. If the kill matrix holds,

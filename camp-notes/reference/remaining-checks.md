@@ -18,15 +18,15 @@ that stood in front of them has run, and it decided the question -- C34
 to C36 in `constraints.md`, and the descriptor-safe teardown is written
 on C36.
 
-**Both have been run, and both hold.** `drivers/killmatrix` holds at all
-twelve kill boundaries and `drivers/renamerace` at all four resolutions.
+**Both have been run, and both hold.** `camp/measure/killmatrix` holds at all
+twelve kill boundaries and `camp/measure/renamerace` at all four resolutions.
 Between them they found four defects, every one of them repaired.
 
 **And neither needs a person any more.** The terminal gate below is
-answered rather than worked around: `drivers/vm` boots a machine that
+answered rather than worked around: `camp/measure/vm` boots a machine that
 exists for the length of one run, where passwordless sudo is not a hole
 because there is nothing behind it, an install is free, and the machine
-is the only thing on the machine. `drivers/vm/guest` is the list of what
+is the only thing on the machine. `camp/measure/vm/guest` is the list of what
 runs there, and adding a measurement is adding a file to it.
 
 What is left is the person-gated group at the end of this file: the ssh

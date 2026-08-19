@@ -2129,17 +2129,17 @@ list only when its mechanism *and* acceptance test are both written,
 and each already appears in §22's stages.
 
 **All six have since been run.** They run unattended now, on a machine
-that exists for the length of one run — `drivers/vm` in this repository
-boots it, and `drivers/vm/guest` is the list of what it runs. The
+that exists for the length of one run — `camp/measure/vm` in this repository
+boots it, and `camp/measure/vm/guest` is the list of what it runs. The
 outcomes:
 
 - The full privileged lifecycle: **holds**, first by hand on
   2026-08-19 and since on every run of the machine.
 - Kill-point recovery: **holds at all twelve boundaries** —
-  `drivers/killmatrix`, which expands the review's eight to one case
+  `camp/measure/killmatrix`, which expands the review's eight to one case
   per nested mount.
 - The rename/symlink race: **holds at all four resolutions** —
-  `drivers/renamerace`. It found two real defects on its first runs:
+  `camp/measure/renamerace`. It found two real defects on its first runs:
   root unmounting a mount in the trap tree by a recorded name, and a
   teardown reporting itself finished after the environment was renamed
   under it. Both are repaired above.
