@@ -56,16 +56,33 @@ only.
 with this repository's actual refs, which is `GIT_SSH_COMMAND` covering
 the case where no shell is involved at all.
 
-## What is still open in this group
+## And the same terminal, after the session ended
 
-One line of it: the same terminal *after* the session ends. `which ssh`
-and one `ssh` outside must be exactly what they were before, because the
-whole arrangement rests on camp having changed nothing outside the
-session. The half of that which needs no peer was measured on 2026-08-18
--- outside, `command -v ssh` is `/usr/bin/ssh` and `ssh -G` is clean --
-so what is left is running it once more in the terminal that just held a
-session.
+```
+(camp) dlaszlo@ubuntu:~/dev/camp-env/camp-live$ exit
+dlaszlo@ubuntu:~/dev/camp-env$ command -v ssh
+/usr/bin/ssh
+dlaszlo@ubuntu:~/dev/camp-env$ ssh -G librechat >/dev/null && echo "kint is tiszta"
+kint is tiszta
+```
 
-And the keyring, which is a different question and untouched: whether
-libsecret is reachable across the namespace boundary, with a `git push`
-to an https remote as the shortest test.
+This is the half that matters most and is easiest to forget. Everything
+above was arranged by prepending a directory to a PATH and declaring an
+environment -- and both of those are the kind of arrangement that leaks
+onto a machine if it is done in the wrong place. It did not: `ssh`
+resolves to `/usr/bin/ssh` again, and `ssh -G` parses the configuration
+it always parsed. **Nothing camp did survived the session.**
+
+The prompt says the same thing in passing. The `(camp)` mark is gone the
+moment the shell is the outside one again, because it was declared in the
+composition's `session.environment` rather than written into a startup
+file on the machine. A marker that outlived its session would be the same
+leak in a smaller form.
+
+## What is left, and it is a different question
+
+The keyring: whether libsecret is reachable across the namespace
+boundary. A `git push` to an https remote whose credentials come from it
+is the shortest test. It matters for the same reason this did -- a push
+that cannot reach the keyring is the same user-visible failure as the ssh
+refusal -- and no configuration key repairs it.

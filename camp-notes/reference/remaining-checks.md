@@ -29,8 +29,10 @@ because there is nothing behind it, an install is free, and the machine
 is the only thing on the machine. `camp/measure/vm/guest` is the list of what
 runs there, and adding a measurement is adding a file to it.
 
-What is left is the person-gated group at the end of this file: the ssh
-and keyring measurements, which need real credentials and a real peer.
+What is left is one measurement, at the end of this file: the keyring
+across the namespace boundary, which needs a real credential. The ssh
+group beside it was closed on 2026-08-19 --
+`log/2026-08-19-ssh-from-inside-a-composition.md`.
 
 That first real run earned its keep immediately: two source guards had
 been walking the module's directory tree, which inside a composition also
@@ -481,14 +483,15 @@ spec §23 as open measurements of this feature.
   must be exactly what they were before. Nothing camp did may have touched
   the host.
 
-  **The peer half is now measured** (2026-08-19), by the owner at a
-  terminal: all three entry points resolve to the launchers and all three
-  completed a connection to a real host, with the user's own host alias
-  and key, and no "Bad owner or permissions" from any of them; `git
-  ls-remote` over ssh answered with this repository's real refs.
+  **Measured, and closed** (2026-08-19), by the owner at a terminal. All
+  three entry points resolve to the launchers and all three completed a
+  connection to a real host, with the user's own host alias and key, and
+  no "Bad owner or permissions" from any of them; `git ls-remote` over ssh
+  answered with this repository's real refs; and in the same terminal
+  afterwards `ssh` is `/usr/bin/ssh` again and `ssh -G` is clean, so
+  nothing camp did survived the session.
   `log/2026-08-19-ssh-from-inside-a-composition.md` has what was run and
-  what each part settles. What is left is the one line that needs no peer:
-  the same terminal after the session ends.
+  what each part settles. Nothing in this item is waiting.
 
   **The earlier half** (2026-08-18). The launchers are in the
   workspace repository and the inventory is accepted, so the arrangement
