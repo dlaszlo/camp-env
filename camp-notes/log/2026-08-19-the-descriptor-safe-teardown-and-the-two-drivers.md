@@ -130,6 +130,65 @@ The assertion is the trap tree and the rest of the machine, and not camp's
 exit code: camp may refuse and camp may carry on, and a root process that
 acts wherever a name points is a confused deputy whatever it prints.
 
+## What the kill matrix found on its first run
+
+Two things, and only the first is camp's.
+
+**A finding: `camp status` reads camp's own self-bind as the composed
+tree.** A run killed at `staging-bound`, at `mount-made` before the
+overlay is made, or at `live-bound` leaves camp's self-bind standing at
+the very path the record names as the overlay's staging or live location.
+`Mount.PresenceAt` asks only whether *something* is mounted there, and
+with no identity in the record — which is every killed run, because the
+reply never came back — it answers `unverified`. The operand comparison
+then runs against the self-bind and says:
+
+```
+not as recorded: it answers as "ext4" and the record says "overlay"
+not as recorded: its lowerdir is "" and the record says ".../workspace"
+...
+5 recorded thing(s) about the composed tree are not what is mounted.
+```
+
+Every line of that is true about the object it looked at and wrong about
+the machine: the composed tree was never mounted at all. The verdict line
+counts the self-bind as the overlay as well — *"partly up: 1 of 5
+recorded mounts are present"* — and the sentence a person reads is the
+one that says camp cannot account for the tree, which is the sentence
+that means somebody else's mount is standing there.
+
+Nothing unsafe follows from it. The teardown does not consult this: a
+record with no identity is unmounted from the table, both places are
+named, and every case here came down clean. It is a message that misleads
+at exactly the moment somebody is reading it to find out what happened.
+
+The obvious repair, not made here: the record carries the filesystem each
+mount should answer as, and `PresenceAt` has the table. A path answering
+as a different filesystem from the one recorded is this mount being
+**gone**, not this mount being present and wrong.
+
+**The rest was the driver's fault, twice.** It asked whether the output
+contained "no record", which matched camp's own *"no recorded identity to
+check it against"*; and then it required `camp status` to exit zero, when
+a partly-up composition is exactly when status must exit non-zero. Both
+are fixed. What they cost is worth writing down: a driver that asserts on
+a phrase rather than on a fact reports the tool as broken and itself as
+right.
+
+## What held
+
+With those two corrections, every requirement the review lists held at
+all twelve boundaries — the staging self-bind, each of the five nested
+mounts, the staging verification, the live self-bind, the move, the
+staging self-bind removal, the reply encoding, and the front end holding
+the reply. Every mount camp made disappeared, no unrelated mount id
+disappeared, the repositories and the storage hashed identically before
+and after, the record survived exactly as long as something was standing,
+and the teardown named what it could not remove.
+
+The five-step staircase worked: killing at the *n*th nested mount by
+waiting at the *n-1* before it reached all five.
+
 ## What is left
 
 Run them. `drivers/README.md` has the two command lines.

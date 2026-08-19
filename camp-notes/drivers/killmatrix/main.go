@@ -336,10 +336,12 @@ func (f *fixture) measure(one *probe.Case, at boundary) {
 	// and every mount that is actually on the machine, at the place it is
 	// actually at. camp wraps its lines at spaces and never inside a path,
 	// so a path either appears whole or does not appear.
+	// The exit code is deliberately not asserted. A composition that is
+	// partly up is exactly when 'camp status' has to exit non-zero -- it
+	// says "run camp down to take it apart", and that is the true answer
+	// after every kill in this matrix. What is required is what it says.
 	status := probe.Run(f.env, f.camp, "status")
 	said := status.Out + status.Err
-	one.Require(status.Code == 0,
-		"'camp status' with no configuration exited %d:\n%s", status.Code, said)
 	one.Require(strings.Contains(said, f.live),
 		"'camp status' with no configuration does not name %s:\n%s", f.live, said)
 	one.Require(strings.Contains(said, record.Hash),
