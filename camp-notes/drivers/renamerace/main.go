@@ -143,9 +143,17 @@ func run() int {
 		one := verdict.Case(at.barrier)
 		fixture.measure(one, at)
 		one.Done()
-		if !fixture.settle() {
-			one.Stop("the machine could not be brought back to a clean state " +
-				"after this case, so the rest would be measuring what it left")
+
+		// Cleaning up is not one of the three things this case asserts, and
+		// folding it into them would report a swap that changed nothing
+		// outside the environment as a swap that failed. It is its own
+		// finding, in its own case, with what is standing named -- and the
+		// run stops there, because the next swap would be measuring what
+		// this one left.
+		if left := fixture.settle(); left != "" {
+			after := verdict.Case("after " + at.barrier)
+			after.Stop("%s", left)
+			after.Done()
 			break
 		}
 	}
@@ -495,24 +503,43 @@ func (f *fixture) putTheNameBack() {
 }
 
 // settle brings the composition down again, whatever the swap left, and
-// reports whether the environment is clean.
-func (f *fixture) settle() bool {
+// says what is still standing.
+//
+// The empty string means the environment is clean. Anything else is a
+// sentence naming what is on the machine and whether camp still has a
+// record for it, because those two together are what decides whether a
+// person can get out of it with 'camp down' or has to unmount by hand.
+func (f *fixture) settle() string {
 	f.putTheNameBack()
 	if _, found, err := probe.RecordFor(f.env); err == nil && found {
 		probe.Run(f.env, f.camp, "down")
 	}
 	record, found, err := probe.RecordFor(f.env)
 	if err != nil {
-		return false
+		return fmt.Sprintf("the record could not be read: %v", err)
 	}
 	if found {
 		probe.Run(f.env, f.camp, "forget", record.Hash)
 	}
+
 	table, err := probe.Table()
 	if err != nil {
-		return false
+		return fmt.Sprintf("the mount table could not be read: %v", err)
 	}
-	return len(probe.Under(table, f.env)) == 0
+	standing := probe.Under(table, f.env)
+	if len(standing) == 0 {
+		return ""
+	}
+	_, still, _ := probe.RecordFor(f.env)
+	if still {
+		return fmt.Sprintf("%d mount(s) are still standing after 'camp down': "+
+			"%s. The record is still there, so camp can be asked again",
+			len(standing), probe.Points(standing))
+	}
+	return fmt.Sprintf("%d mount(s) are still standing and camp has no record "+
+		"of them: %s.\n      Nothing camp can be told will remove these -- a "+
+		"teardown is built from the record, and the record is gone. They have "+
+		"to be unmounted by hand", len(standing), probe.Points(standing))
 }
 
 func sudo(args ...string) (string, error) {

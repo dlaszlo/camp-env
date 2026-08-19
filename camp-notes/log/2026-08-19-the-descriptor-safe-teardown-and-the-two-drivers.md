@@ -258,11 +258,75 @@ name does not redirect its own descriptor's `/proc` name. The half that
 is only end-to-end — that the call acts on the mount standing there and
 on nothing else — is what the rename race measures whenever it runs.
 
+## The second run: what held, and the second finding
+
+With the descriptor-relative unmount in place, the whole group was run
+again. **The kill matrix held at all twelve boundaries**, and the rename
+race held at `base-owned`, `prechecked` and `before-move-open`. At
+`stands-there` its three assertions held too: no mount id outside the
+environment changed, no mount attribute outside it changed, no inode mode
+in the trap tree changed, and the trap hashed the same before and after.
+Root did not act where the link pointed, at any of the four resolutions.
+
+What did not hold is what happened *inside* the environment, and it is a
+finding of its own.
+
+**`camp down` reported success with five of its own mounts still
+standing, and then discarded the record.** The sequence, from the mount
+table afterwards: the barrier stopped the helper at the first teardown
+target, the name was swapped, the helper removed that first target
+correctly — through the descriptor, which the swap could not redirect —
+and then reported every remaining target as **absent** and exited 0. The
+front end took that for a finished teardown and released the record.
+
+The cause is one line's worth and it is not in the new code. Each target
+is looked up in the mount table by path:
+
+```go
+if len(mountinfo.At(table, target.Path)) == 0 { /* absent */ }
+```
+
+A mount point cannot be renamed (C34), but an *ancestor* can, and the
+kernel then reports the mount under its new path. So after the swap the
+table lists camp's mounts at `.../campcheck.real/...`, the recorded paths
+match nothing, and "nothing is mounted there" is the answer to a question
+about a name rather than about a mount. `state.Release` asks the same
+question the same way, which is why the record went too.
+
+Nothing outside the environment is affected and nothing is a confused
+deputy here: the person who renamed their own environment is the person
+whose workspace stays read-only until they unmount it by hand. But it
+breaks the rule the review stated for finding 3 — never forget a record
+while a mount exists at any of its paths — and it breaks it silently.
+
+**The repair this suggests, not made here.** The helper already holds the
+base as a descriptor. `readlink("/proc/self/fd/<that descriptor>")` is the
+path that base has *now*: when it is not the path the job was built for,
+the environment has been renamed underneath the helper and every
+path-based lookup in the table is unreliable. A teardown in that state
+should refuse with nothing unmounted, which keeps the record and leaves
+the person able to put the name back and run it again. It costs one
+readlink, needs no primitive nobody has measured, and asks the descriptor
+rather than the name — which is the rule this whole repair has been
+following.
+
+The thorough version is to stop identifying camp's mounts in the table by
+path at all: `statx(fd, STATX_MNT_ID)` names the mount a descriptor holds,
+and the table can then be read by id. That is Linux 5.8 and nobody here
+has measured it.
+
 ## What is left
 
-Run the rename race again, past `base-owned`: `./measure renamerace`.
-Three swaps after it have never been reached, and the kill matrix should
-be re-run too, because the teardown changed underneath it.
+Two things, and both are decisions rather than work:
+
+1. Whether to make the teardown refuse when the base's current path is
+   not the one the job names. Until it does, a rename during `camp down`
+   loses the record while camp's mounts stand.
+2. Whether to repair `camp status` reading camp's own self-bind as the
+   composed tree, written up above.
+
+The measurements themselves are done and both drivers are green on
+everything they were built to assert.
 
 Then two things follow from whatever they say. If the kill matrix holds,
 finding 3's acceptance criteria are met by measurement rather than by
