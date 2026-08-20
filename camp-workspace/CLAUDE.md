@@ -132,6 +132,11 @@ change — and then it is one or two short lines carrying the non-obvious
 reason. Write it the way an experienced developer would: useful to
 whoever reads the history, silent about the obvious.
 
+Commit messages are ASCII only. Do not stand in for a non-ASCII
+character with an ASCII substitute (an em dash written as "--"):
+rephrase the sentence so the character is not needed. A flag name such
+as `--force` is a name, not punctuation, and stays.
+
 Nothing internal goes into the product repository: no design notes, no
 review material, no personal paths, no references to whatever else is
 running on this machine. That material belongs here or in `.notes`.
