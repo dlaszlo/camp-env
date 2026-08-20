@@ -121,9 +121,16 @@ before saying anything is finished.
 ## Commits
 
 One commit per coherent change, message in the imperative, first line
-saying what changed for the reader rather than which file moved. The body
-says *why*, and what was measured if anything was. Look at `git log` —
-the existing messages are the standard.
+saying what changed for the reader rather than which file moved.
+
+A commit message is a small, readable thing — KISS and DRY apply to it
+too. It must never be longer than the change itself, and never cost
+effort to read. A trivial change — a few lines of text, a rename, a
+typo — gets the subject line and nothing else. A body appears only when
+the content itself needs explaining — a code change, a larger document
+change — and then it is one or two short lines carrying the non-obvious
+reason. Write it the way an experienced developer would: useful to
+whoever reads the history, silent about the obvious.
 
 Nothing internal goes into the product repository: no design notes, no
 review material, no personal paths, no references to whatever else is
