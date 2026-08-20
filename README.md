@@ -104,6 +104,9 @@ tool is built against.
 camp being developed inside its own composition is the useful part: every
 change to the tool is used the same day, by the session that made it.
 
+camp was built with the help of Claude Code (Anthropic LLM models) and
+Codex (OpenAI LLM models).
+
 ## License
 
 MIT, in the repository this one composes. This one is configuration and
